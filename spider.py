@@ -3,62 +3,78 @@
 
 import re
 import os
-import mechanize
 from bs4 import BeautifulSoup
 import requests
+import urllib
 
-def execCmd(cmd):
-    r = os.popen(cmd)
-    text = r.read()
-    r.close()
-    return text
-
-def detag(html):
-    detag = re.subn('<script[^>]*>([\w\W]*?)</script>','',html)[0]
-    detag = detag.replace('&nbsp;','')
-    detag = detag.replace('&amp;','&')
-    detag = detag.replace("'",'|')
-    detag = detag.replace('&ensp;',';')
-    detag = detag.replace('\t','')
-    detag = detag.replace('\n','')
-    detag = detag.replace('\r','')
-    detag = detag.replace('\\','/')
-    detag = re.subn('<[^>]*>','',detag)[0]
-    return detag.strip()
-
-def re_findall(pattern, html):
-    if re.findall(pattern, html, re.S):
-        return re.findall(pattern, html, re.S)
-    else:
-        return 'N'
+url_result=[]
 
 
+# def execCmd(cmd):
+#     r = os.popen(cmd)
+#     text = r.read()
+#     r.close()
+#     return text
+
+# def detag(html):
+#     detag = re.subn('<script[^>]*>([\w\W]*?)</script>','',html)[0]
+#     detag = detag.replace('&nbsp;','')
+#     detag = detag.replace('&amp;','&')
+#     detag = detag.replace("'",'|')
+#     detag = detag.replace('&ensp;',';')
+#     detag = detag.replace('\t','')
+#     detag = detag.replace('\n','')
+#     detag = detag.replace('\r','')
+#     detag = detag.replace('\\','/')
+#     detag = re.subn('<[^>]*>','',detag)[0]
+#     return detag.strip()
+
+# def re_findall(pattern, html):
+#     if re.findall(pattern, html, re.S):
+#         return re.findall(pattern, html, re.S)
+#     else:
+#         return 'N'
 
 
+def do_search_keyword():
+    keyword = raw_input('请输入企业名称、人名、产品名称或其它关键词 ：')
+    url = 'https://www.tianyancha.com/search?key='+urllib.quote(keyword)+'&checkFrom=searchBox'
+
+    headers = {
+        'Cookie': 'TYCID=8c420960894b11e79bb7cf4adc554d53; uccid=baeee58fe4d1d697092e61f6525e8719; ssuid=6805162414; aliyungf_tc=AQAAAOsOUQId4QcAlaRf3mqAPMUDMG/2; csrfToken=S2nttCpDrr4WCbvLkQRClEUt; bannerFlag=true; _csrf=i6MDX6NEr+KEpAxRAcWeaA==; OA=cxAohDKsDZv4yk4sQ70GtLb5KtPEhEnIp/d25AgGeuU=; _csrf_bk=76b9aab25bdab0db8930d22ee4171984; Hm_lvt_e92c8d65d92d534b0fc290df538b4758=1503634325,1504143041,1504148840,1504245847; Hm_lpvt_e92c8d65d92d534b0fc290df538b4758=1504490343',
+        'Host': 'www.tianyancha.com',
+        'Referer': 'https://www.tianyancha.com/',
+        'Upgrade-Insecure-Requests': '1',
+        'User-Agent': 'Mozilla / 5.0(Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.113 Safari/537.36'
+    }
+    html = requests.get(url, headers=headers)
+    soup_list = BeautifulSoup(html.text, 'lxml')
+
+    urls= soup_list.select('#web-content > div > div > div > div.col-9.search-2017-2.pr10.pl0 > div.b-c-white.search_result_container > div > div.search_right_item > div.row.pb5 > div.col-xs-10.search_repadding2.f18 > a')
+    for url in urls:
+        url_result.append(url['href'])
+
+    return url_result
 
 
+def keyword_from_db():
+    pass
 
 
-def get_page():
-    url = "https://www.tianyancha.com/company/12949891"
-    br = mechanize.Browser()
-    br.addheaders = [
-        ('Accept', 'application/json, text/javascript, */*; q=0.01') \
-        , ('Accept-Encoding', 'gzip, deflate, br') \
-        , ('Accept-Language', 'zh-CN,zh;q=0.8,en;q=0.6') \
-        , ('Connection', 'keep-alive') \
-        , ('Cookie', 'TYCID=8c420960894b11e79bb7cf4adc554d53; uccid=baeee58fe4d1d697092e61f6525e8719;ssuid=6805162414; RTYCID=d6928b5fe88243489ad83678134a5e06; tyc-user-info=%257B%2522token%2522%253A%2522eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiIxODU1MTk4NjYyNSIsImlhdCI6MTUwNDE0NDg1MCwiZXhwIjoxNTE5Njk2ODUwfQ.ChipyAlCl7j08qBgYW8nsR46mIs91UTI80IftelNgjDf59KZ6JWWQm9BDonBKsl5UKyO44PtnzV1olf-RjUXMQ%2522%252C%2522integrity%2522%253A%25220%2525%2522%252C%2522state%2522%253A%25220%2522%252C%2522vnum%2522%253A%25220%2522%252C%2522onum%2522%253A%25220%2522%252C%2522mobile%2522%253A%252218551986625%2522%257D; auth_token=eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiIxODU1MTk4NjYyNSIsImlhdCI6MTUwNDE0NDg1MCwiZXhwIjoxNTE5Njk2ODUwfQ.ChipyAlCl7j08qBgYW8nsR46mIs91UTI80IftelNgjDf59KZ6JWWQm9BDonBKsl5UKyO44PtnzV1olf-RjUXMQ; aliyungf_tc=AQAAAIrjRh3IugIAlaRf3sGFCOfYdqPV; csrfToken=sWaDXU2nJB0QKqUAV0D8XSzN; bannerFlag=true; OA=e+gaygcWZ84c32kAIH2c9feRsbYPaO9so59OI1hKLF4bER8rcljLYdw2EDQSPJZc; _csrf=HzN2RRmaxND842F/ICyCpQ==; _csrf_bk=e73360ec0593474650ab26dac3b35170; Hm_lvt_e92c8d65d92d534b0fc290df538b4758=1503634325,1504143041,1504148840; Hm_lpvt_e92c8d65d92d534b0fc290df538b4758=1504176400') \
-        , ('Host', 'www.tianyancha.com') \
-        , ('Referer', 'https://www.tianyancha.com/') \
-        , ('User-Agent',
-           'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.113 Safari/537.36') \
-        , ('X-Requested-With', 'XMLHttpRequest')\
-    ]
+def get_page(url):
+    headers = {
+        'Cookie': 'TYCID=8c420960894b11e79bb7cf4adc554d53; uccid=baeee58fe4d1d697092e61f6525e8719; ssuid=6805162414; aliyungf_tc=AQAAAOsOUQId4QcAlaRf3mqAPMUDMG/2; csrfToken=S2nttCpDrr4WCbvLkQRClEUt; bannerFlag=true; _csrf=i6MDX6NEr+KEpAxRAcWeaA==; OA=cxAohDKsDZv4yk4sQ70GtLb5KtPEhEnIp/d25AgGeuU=; _csrf_bk=76b9aab25bdab0db8930d22ee4171984; Hm_lvt_e92c8d65d92d534b0fc290df538b4758=1503634325,1504143041,1504148840,1504245847; Hm_lpvt_e92c8d65d92d534b0fc290df538b4758=1504490343',
+        'Host': 'www.tianyancha.com',
+        'Referer': 'https://www.tianyancha.com/',
+        'Upgrade-Insecure-Requests': '1',
+        'User-Agent': 'Mozilla / 5.0(Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.113 Safari/537.36'
+    }
 
-    html = br.open(url).read()
-    soup = BeautifulSoup(html,'lxml')
-    # print soup.prettify()
+
+    html = requests.get(url, headers=headers)
+    soup = BeautifulSoup(html.text, 'lxml')
     return soup
+
 
 def basic_info(soup):
     ### 开头四个信息
@@ -72,6 +88,7 @@ def basic_info(soup):
     print soup.find_all('div', class_="in-block vertical-top")[0].text
 
     # print soup.find_all('div', id="_container_jingpin")[0].text
+
 
 def get_jingpin(soup):
     ### 竞品信息
@@ -102,8 +119,6 @@ def get_jingpin(soup):
             print '竞品信息 ' + e
 
 
-
-
 def get_companyRongzi(soup):
     ### 融资历史
     ## 获取个数
@@ -130,6 +145,7 @@ def get_companyRongzi(soup):
         else:
             print '融资历史 ' + e
 
+
 def get_productinfo(soup):
     ### 产品信息
     ## 获取个数
@@ -153,7 +169,6 @@ def get_productinfo(soup):
             print '页面中没有 -产品信息- 的对应信息'
         else:
             print '产品信息 ' + e
-
 
 
 def get_icpCount(soup):
@@ -185,9 +200,20 @@ def get_icpCount(soup):
 
 
 if __name__=='__main__':
-    soup = get_page()
-    basic_info(soup)
-    get_companyRongzi(soup)
-    get_jingpin(soup)
-    get_productinfo(soup)
-    get_icpCount(soup)
+    url_result=do_search_keyword()
+    if url_result :
+        for url in url_result:
+            soup=get_page(url)
+            basic_info(soup)
+            get_companyRongzi(soup)
+            get_jingpin(soup)
+            get_productinfo(soup)
+            get_icpCount(soup)
+            print '------------分割线------------'
+
+    else:
+        print '''没有找到相关结果
+        1.输入准确的关键词，重新搜索
+        2.更换筛选条件，重新搜索
+        3.试试“深度搜索”
+        4.输入的关键词过于宽泛        '''
