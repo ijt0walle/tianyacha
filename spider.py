@@ -316,7 +316,7 @@ def get_website_backup(soup):
             conn.commit()
 
 
-if __name__=='__main__':
+if __name__== '__main__':
     url_result=do_search_keyword()
     if url_result :
         for url in url_result:
