@@ -61,11 +61,6 @@ def execCmd(cmd):
     return (text)
 
 
-# def re_findall(pattern, html):
-#     if re.findall(pattern, html, re.S):
-#         return re.findall(pattern, html, re.S)
-#     else:
-#         return 'N'
 
 
 def do_search_keyword(keyword):
@@ -208,7 +203,9 @@ def staff_info(soup):
         ID = soup.select('#_container_staff > div > div > div:nth-of-type(' + str(i) + ') > div > a')[0]['href']
 
         print position, name, ID
-
+        return ('insert into tyc_staff_info values ("%s","%s","%s","%s","%s","%s","%s")'%(
+            keyword.decode('utf-8'),company_name,position,name,ID,str(datetime.datetime.now(),str(datetime.datetime.now())[:10]))
+        )
 
 ## 股东信息
 def shareholder_info(soup):
@@ -225,6 +222,11 @@ def shareholder_info(soup):
                 '#_container_holder > div > table > tbody > tr:nth-of-type(' + str(i) + ') > td:nth-of-type(3)')[
                 0].text
         print '股东: ', shareholder, ' 出资比例: ', ratio, ' 认缴出资:', value
+        return (
+            'insert into tyc_shareholder_info values("%s","%s","%s","%s","%s","%s","%s")' % (
+                keyword.decode('utf-8'), company_name, shareholder,ratio,value,
+                str(datetime.datetime.now()), str(datetime.datetime.now())[:10])
+        )
 
 def main():
     global keyword

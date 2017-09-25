@@ -3,10 +3,12 @@
 ### Example user template
 
 # IntelliJ project files
-.idea
+.idea/tianyacha.iml
+.idea/misc.xml
 *.iml
 out
 gen
 .gitignore
 .idea/workspace.xml
 test.py
+.idea/vcs.xml
