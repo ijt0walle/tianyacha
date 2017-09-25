@@ -12,7 +12,7 @@ import urllib
 
 url_result=[]
 
-conn = MySQLdb.connect(host="localhost", user="root", passwd="root", db="tianyancha", charset="utf8")
+conn = MySQLdb.connect(host="localhost", user="root", passwd="", db="tianyancha", charset="utf8")
 cursor = conn.cursor()
 
 
