@@ -45,11 +45,6 @@ conn = MySQLdb.connect(host="localhost", user="root", passwd="root", db="tianyan
 cursor = conn.cursor()
 
 
-#
-# conn = MySQLdb.connect(host="localhost", user="root", passwd="root", db="tianyancha", charset="utf8")
-# cursor = conn.cursor()
-#
-
 def detag(html):
     detag = re.subn('<script[^>]*>([\w\W]*?)</script>', '', html)[0]
     detag = detag.replace('&nbsp;', '')
@@ -97,6 +92,8 @@ def do_search_keyword():
     html = requests.get(url, headers=headers)
 
     urls_result = re_findall('<div class="search_right_item"><div><a href="(.*?)"',html.text)
+
+    print urls_result
     return urls_result
 
 
@@ -123,11 +120,9 @@ def get_page(url):
 ## 获取公司名和cid
 def basic_info(soup):
     global company_name
-    global cid
-
-    cid = soup.select('#nav-main-graphInfo > iframe')[0]['data-company-id']
-
-    # soup = get_page(url)
+    # global cid
+    #
+    # cid = re_findall('https://www.tianyancha.com/company/(.*?)',url)
     company_name = soup.select(
         '#company_web_top > div.companyTitleBox55.pt30.pl30.pr30 > div.company_header_width.ie9Style > div:nth-of-type(1) > span.f18.in-block.vertival-middle.sec-c2')[
         0].text
@@ -285,7 +280,7 @@ def outbound_investment(soup):
                         span_part[6].decode('utf-8'), str(datetime.datetime.now()), str(datetime.datetime.now())
                     ))
                 conn.commit()
-
+                print '对外投资---最后一页第'+str(x)+'条插入完成'
 
         else:
 
@@ -301,8 +296,8 @@ def outbound_investment(soup):
                 print span_part[5]  # 注册时间
                 print span_part[6]  # 状态
                 print '--------------------------'
-                cursor.execute(
-                    'insert into tyc_outbound_investment values("%s","%s","%s","%s","%s","%s","%s","%s","%s","%s")' % (
+                return
+                ('insert into tyc_outbound_investment values("%s","%s","%s","%s","%s","%s","%s","%s","%s","%s")' % (
                         company_name, span_part[0].decode('utf-8'),
                         legal_representative_to_be_invested[0].decode('utf-8'),
                         span_part[2].decode('utf-8'), span_part[3].decode('utf-8'), span_part[4].decode('utf-8'),
@@ -310,6 +305,7 @@ def outbound_investment(soup):
                         span_part[6].decode('utf-8'), str(datetime.datetime.now()), str(datetime.datetime.now())
                     ))
                 conn.commit()
+                print '对外投资---第'+str(x)+'条插入完成'
 
 
 ## 对外投资cookie部分
@@ -485,36 +481,25 @@ def website_backup(soup):
             0].text
 
 
+
+
+
 if __name__ == '__main__':
-    urlsss=do_search_keyword()
-    # url_result = [':/https/www.tianyancha.com/company/22822']
-    if urlsss:
-    #     # pool = Pool()
-    #     # pool.map(get_business_info, url_result)
-    #     # pool.map(basic_info,url_result)
-    #     # soup=get_page(url)
-    #     # basic_info(soup)
-    #     # get_financing_history(soup)
-    #     # get_conpetitive_product(soup)
-    #     # get_productinfo(soup)
-    #     # get_website_backup(soup)
-    #     # get_business_info(soup)
-    #
-        for url in urlsss:
-            time.sleep(2)
+    urls_result=do_search_keyword()
+    # url_result = ['https://www.tianyancha.com/company/22822']
+    if urls_result:
+
+        for url in urls_result:
+
             print url
+            global cid
+
             soup=get_page(url)
-            print soup
-            # basic_info(soup)
-    #         outbound_investment(soup)
-    #         # get_business_info(soup)
-    #         # staff_info(soup)
-    #         # shareholder_info(soup)
-    #         # outbound_investment(soup)
-    #         # change_record(soup)
-    #         # product_info(soup)
-    #         # wechat_subscription(soup)
-    #         # website_backup(soup)
-    #         print '------------分割线------------'
+            cid = url.split('/')[-1]
+            basic_info(soup)
+            print cid
+            print company_name
+            outbound_investment(soup)
+
 
 
