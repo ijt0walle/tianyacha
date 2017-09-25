@@ -44,14 +44,14 @@ phantom.exit();
 conn = MySQLdb.connect(host="localhost", user="root", passwd="root", db="tianyancha", charset="utf8")
 cursor = conn.cursor()
 
-
-proxy_list = list(set(urllib.urlopen(
-    'http://60.205.92.109/api.do?name=3E30E00CFEDCD468E6862270F5E728AF&status=1&type=static').read().split('\n')[:-1]))
-index = random.randint(0, len(proxy_list) - 1)
-current_proxy = proxy_list[index]
-print "NEW PROXY:\t%s" % current_proxy
-proxies = {"http": "http://" + current_proxy, "https": "http://" + current_proxy, }
-
+def get_proxy():
+    proxy_list = list(set(urllib.urlopen(
+        'http://60.205.92.109/api.do?name=3E30E00CFEDCD468E6862270F5E728AF&status=1&type=static').read().split('\n')[:-1]))
+    index = random.randint(0, len(proxy_list) - 1)
+    current_proxy = proxy_list[index]
+    print "NEW PROXY:\t%s" % current_proxy
+    proxies = {"http": "http://" + current_proxy, "https": "http://" + current_proxy, }
+    return proxies
 
 
 def execCmd(cmd):
@@ -232,6 +232,8 @@ if __name__ =='__main__':
             if keyword[0].find('company_name') == -1:
                 urls_result=do_search_keyword(keyword[0])
                 for url in urls_result:
+                    proxies=get_proxy()
+
                     print url
                     global cid
 
