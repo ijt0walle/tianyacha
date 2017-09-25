@@ -191,7 +191,7 @@ def get_business_info(soup):
 
     return (
         'insert into tyc_business_info values("%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s")' % (
-            keyword[0], company_name, registered_capital,registration_time,company_status,business_registration_number,organization_code,uniform_credit_code,
+            keyword.decode('utf-8'), company_name, registered_capital,registration_time,company_status,business_registration_number,organization_code,uniform_credit_code,
     enterprise_type,taxpayer_identification_number,industry,business_term,approval_date,registration_authority,registered_address,english_name,scope_of_business,
             str(datetime.datetime.now()), str(datetime.datetime.now())[:10])
     )
