@@ -232,21 +232,26 @@ if __name__ =='__main__':
             if keyword[0].find('company_name') == -1:
                 urls_result=do_search_keyword(keyword[0])
                 for url in urls_result:
-                    proxies=get_proxy()
+                    while True:
+                        try:
+                            proxies=get_proxy()
 
-                    print url
-                    global cid
+                            print url
+                            global cid
 
-                    soup = get_page(url)
-                    cid = url.split('/')[-1]
-                    basic_info(soup)
-                    print cid
-                    print company_name
+                            soup = get_page(url)
+                            cid = url.split('/')[-1]
+                            basic_info(soup)
+                            print cid
+                            print company_name
 
-                    get_business_info(soup)
+                            get_business_info(soup)
 
-                    cursor.execute(get_business_info(soup))
-                    conn.commit()
-                    time.sleep(2)
-
+                            cursor.execute(get_business_info(soup))
+                            conn.commit()
+                            time.sleep(2)
+                            break
+                        except:
+                            print 'try proxy again'
+                            continue
     csvFile.close()

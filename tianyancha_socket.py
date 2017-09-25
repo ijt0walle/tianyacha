@@ -114,7 +114,7 @@ def getJob(corp_name):
             'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.75 Safari/537.36',
             'Accept': 'application/json, text/javascript, */*; q=0.01',
             'X-Requested-With': 'XMLHttpRequest'
-        }
+        }0
         tongji_url = "https://www.tianyancha.com/tongji/" + urllib.quote(corp_name.encode('utf8')) + ".json?_=" + str(
             timestamp)
         print (tongji_url + '\n' + str(datetime.datetime.now()))
