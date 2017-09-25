@@ -1,6 +1,6 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
-
+import random
 import re
 import os
 from multiprocessing import Pool
@@ -44,6 +44,16 @@ phantom.exit();
 conn = MySQLdb.connect(host="localhost", user="root", passwd="root", db="tianyancha", charset="utf8")
 cursor = conn.cursor()
 
+
+proxy_list = list(set(urllib.urlopen(
+    'http://60.205.92.109/api.do?name=3E30E00CFEDCD468E6862270F5E728AF&status=1&type=static').read().split('\n')[:-1]))
+index = random.randint(0, len(proxy_list) - 1)
+current_proxy = proxy_list[index]
+print "NEW PROXY:\t%s" % current_proxy
+proxies = {"http": "http://" + current_proxy, "https": "http://" + current_proxy, }
+
+
+
 def execCmd(cmd):
     r = os.popen(cmd)
     text = r.read()
@@ -70,7 +80,7 @@ def do_search_keyword(keyword):
         'Upgrade-Insecure-Requests': '1',
         'User-Agent': 'Mozilla / 5.0(Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.113 Safari/537.36'
     }
-    html = requests.get(url, headers=headers)
+    html = requests.get(url, proxies=proxies, headers=headers)
 
     urls_result = re.findall('<div class="search_right_item"><div><a href="(.*?)"',html.text,re.S)
     print urls_result
@@ -86,7 +96,7 @@ def get_page(url):
         'User-Agent': 'Mozilla / 5.0(Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.113 Safari/537.36'
     }
 
-    html = requests.get(url, headers=headers)
+    html = requests.get(url,proxies=proxies, headers=headers)
     soup = BeautifulSoup(html.text, 'lxml')
     return soup
 
