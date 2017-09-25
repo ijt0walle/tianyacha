@@ -97,6 +97,7 @@ def get_page(url):
     }
 
     html = requests.get(url,proxies=proxies, headers=headers)
+    print html.text
     soup = BeautifulSoup(html.text, 'lxml')
     return soup
 
@@ -105,7 +106,7 @@ def get_page(url):
 def basic_info(soup):
     global company_name
 
-    company_name = soup.find_all('span',class_="f18 in-block vertival-middle")[0].text
+    company_name = soup.find_all('span',class_="f18 in-block vertival-middle sec-c2")[0].text
     # '#company_web_top > div.companyTitleBox55.pt30.pl30.pr30 > div.company_header_width.ie9Style > div:nth-child(1) > span.f18.in-block.vertival-middle.sec-c2'
     # '#company_web_top > div.companyTitleBox55.pt30.pl30.pr30 > div.company_header_width.ie9Style > div > span.f18.in-block.vertival-middle.sec-c2'
 
@@ -192,8 +193,8 @@ def get_business_info(soup):
         'insert into tyc_business_info values("%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s")' % (
             keyword[0], company_name, registered_capital,registration_time,company_status,business_registration_number,organization_code,uniform_credit_code,
     enterprise_type,taxpayer_identification_number,industry,business_term,approval_date,registration_authority,registered_address,english_name,scope_of_business,
-            str(datetime.datetime.now()), str(datetime.datetime.now())[:10]
-        ))
+            str(datetime.datetime.now()), str(datetime.datetime.now())[:10])
+    )
 
 
 ## 主要人员
@@ -225,33 +226,60 @@ def shareholder_info(soup):
                 0].text
         print '股东: ', shareholder, ' 出资比例: ', ratio, ' 认缴出资:', value
 
-if __name__ =='__main__':
+def main():
+    global keyword
+    global proxies
     with open("zhaopin_not_in_jsgsj_basic_info.csv", "r") as csvFile:
         reader = csv.reader(csvFile)
-        for keyword in reader:
-            if keyword[0].find('company_name') == -1:
-                urls_result=do_search_keyword(keyword[0])
+        for crop_name in reader:
+            keyword = crop_name[0]
+            if crop_name[0].find('company_name') == -1:
+                proxies = get_proxy()
+                urls_result=do_search_keyword(crop_name[0])
+
                 for url in urls_result:
-                    while True:
-                        try:
-                            proxies=get_proxy()
 
-                            print url
-                            global cid
+                    print url
+                    global cid
 
-                            soup = get_page(url)
-                            cid = url.split('/')[-1]
-                            basic_info(soup)
-                            print cid
-                            print company_name
+                    soup = get_page(url)
+                    cid = url.split('/')[-1]
+                    basic_info(soup)
+                    print cid
+                    print company_name
 
-                            get_business_info(soup)
+                    # get_business_info(soup)
 
-                            cursor.execute(get_business_info(soup))
-                            conn.commit()
-                            time.sleep(2)
-                            break
-                        except:
-                            print 'try proxy again'
-                            continue
+                    cursor.execute(get_business_info(soup))
+                    conn.commit()
+                    time.sleep(2)
+
+                # if urls_result :
+                #     for url in urls_result:
+                #         try :
+                #             print url
+                #             global cid
+                #
+                #             soup = get_page(url)
+                #             cid = url.split('/')[-1]
+                #             basic_info(soup)
+                #             print cid
+                #             print company_name
+                #
+                #             get_business_info(soup)
+                #
+                #             cursor.execute(get_business_info(soup))
+                #             conn.commit()
+                #             time.sleep(2)
+                #         except :
+                #             print 'error 2 with proxy do main again'
+                #             main()
+                # else:
+                #     print 'error 1 with proxy do main again'
+                #     main()
+
+
     csvFile.close()
+
+if __name__ == "__main__":
+    main()
