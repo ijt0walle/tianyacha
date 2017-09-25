@@ -193,22 +193,22 @@ def get_business_info(soup):
 
 
 ## 主要人员
-def staff_info(soup):
+def staff_info(soup,cursor):
     num = soup.select('#nav-main-staffCount > span')[0].text
-    print num
+
     for i in range(1, int(num) + 1):
         position = soup.select('#_container_staff > div > div > div:nth-of-type(' + str(
-            i) + ') > div > div.in-block.f14.new-c5.pt9.pl10.overflow-width.vertival-middle > span')[0].text
+            i) + ') > div > div.in-block.f14.new-c5.pt9.pl10.overflow-width.vertival-middle ')[0].text
         name = soup.select('#_container_staff > div > div > div:nth-of-type(' + str(i) + ') > div > a')[0].text
         ID = soup.select('#_container_staff > div > div > div:nth-of-type(' + str(i) + ') > div > a')[0]['href']
 
         print position, name, ID
-        return ('insert into tyc_staff_info values ("%s","%s","%s","%s","%s","%s","%s")'%(
-            keyword.decode('utf-8'),company_name,position,name,ID,str(datetime.datetime.now(),str(datetime.datetime.now())[:10]))
-        )
+
+        cursor.execute('insert into tyc_staff_info values ("%s","%s","%s","%s","%s","%s","%s")'%(
+            keyword.decode('utf-8'),company_name,position,name,ID,str(datetime.datetime.now()),str(datetime.datetime.now())[:10]))
 
 ## 股东信息
-def shareholder_info(soup):
+def shareholder_info(soup,cursor):
     num = soup.select('#nav-main-holderCount > span')[0].text
     for i in range(1, int(num) + 1):
         shareholder = soup.select(
@@ -222,13 +222,15 @@ def shareholder_info(soup):
                 '#_container_holder > div > table > tbody > tr:nth-of-type(' + str(i) + ') > td:nth-of-type(3)')[
                 0].text
         print '股东: ', shareholder, ' 出资比例: ', ratio, ' 认缴出资:', value
-        return (
+        cursor.execute(
             'insert into tyc_shareholder_info values("%s","%s","%s","%s","%s","%s","%s")' % (
                 keyword.decode('utf-8'), company_name, shareholder,ratio,value,
                 str(datetime.datetime.now()), str(datetime.datetime.now())[:10])
         )
 
 def main():
+    conn = MySQLdb.connect(host="localhost", user="root", passwd="root", db="tianyancha", charset="utf8")
+    cursor = conn.cursor()
     global keyword
     global proxies
     with open("zhaopin_not_in_jsgsj_basic_info.csv", "r") as csvFile:
@@ -239,46 +241,49 @@ def main():
                 proxies = get_proxy()
                 urls_result=do_search_keyword(crop_name[0])
 
-                for url in urls_result:
-
-                    print url
-                    global cid
-
-                    soup = get_page(url)
-                    cid = url.split('/')[-1]
-                    basic_info(soup)
-                    print cid
-                    print company_name
-
-                    # get_business_info(soup)
-
-                    cursor.execute(get_business_info(soup))
-                    conn.commit()
-                    time.sleep(2)
-
-                # if urls_result :
-                #     for url in urls_result:
-                #         try :
-                #             print url
-                #             global cid
+                # for url in urls_result:
                 #
-                #             soup = get_page(url)
-                #             cid = url.split('/')[-1]
-                #             basic_info(soup)
-                #             print cid
-                #             print company_name
+                #     print url
+                #     global cid
                 #
-                #             get_business_info(soup)
+                #     soup = get_page(url)
+                #     cid = url.split('/')[-1]
+                #     basic_info(soup)
+                #     print cid
+                #     print company_name
                 #
-                #             cursor.execute(get_business_info(soup))
-                #             conn.commit()
-                #             time.sleep(2)
-                #         except :
-                #             print 'error 2 with proxy do main again'
-                #             main()
-                # else:
-                #     print 'error 1 with proxy do main again'
-                #     main()
+                #     cursor.execute(get_business_info(soup))
+                #     shareholder_info(soup,cursor)
+                #     staff_info(soup,cursor)
+                #     conn.commit()
+                #     time.sleep(2)
+
+                if urls_result :
+                    for url in urls_result:
+                        try :
+                            print url
+                            global cid
+
+                            soup = get_page(url)
+                            cid = url.split('/')[-1]
+                            basic_info(soup)
+                            print cid
+                            print company_name
+
+
+
+                            cursor.execute(get_business_info(soup))
+                            shareholder_info(soup, cursor)
+                            staff_info(soup, cursor)
+                            conn.commit()
+                            print '休息一下'
+                            time.sleep(2)
+                        except :
+                            print 'error 2 with proxy do main again'
+                            main()
+                else:
+                    print 'error 1 with proxy do main again'
+                    main()
 
 
     csvFile.close()
