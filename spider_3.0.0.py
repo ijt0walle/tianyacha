@@ -95,8 +95,8 @@ def get_page(url):
         'User-Agent': 'Mozilla / 5.0(Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.113 Safari/537.36'
     }
 
-    html2 = requests.get(url, proxies=proxies, headers=headers)
-    return html2
+    html = requests.get(url, proxies=proxies, headers=headers)
+    return html
     # soup = BeautifulSoup(html.text, 'lxml')
     # return soup
 
@@ -111,7 +111,8 @@ def basic_info(html):
 
 
 ## 工商信息
-def get_business_info(soup):
+def get_business_info(html):
+    soup = BeautifulSoup(html.text, 'lxml')
     # 注册资本
     registered_capital = soup.select(
         '#_container_baseInfo > div > div.baseInfo_model2017 > table > tbody > tr > td:nth-of-type(2) > div:nth-of-type(1) > div.pb10 > div')[
@@ -204,10 +205,9 @@ def get_business_info(soup):
 
 
 ## 主要人员
-def staff_info(html):
+def staff_info(html,cursor):
 
-# def staff_info(soup, cursor):
-    if html.text.__contains__('#nav-main-staffCount')==1:
+    if html.text.__contains__('nav-main-staffCount'):
         soup = BeautifulSoup(html.text, 'lxml')
         num = soup.select('#nav-main-staffCount > span')[0].text
 
@@ -217,37 +217,48 @@ def staff_info(html):
             name = soup.select('#_container_staff > div > div > div:nth-of-type(' + str(i) + ') > div > a')[0].text
             ID = soup.select('#_container_staff > div > div > div:nth-of-type(' + str(i) + ') > div > a')[0]['href']
 
+            cursor.execute('insert into tyc_staff_info values ("%s","%s","%s","%s","%s","%s","%s")' % (
+                keyword.decode('utf-8'), company_name, position, name, ID, str(datetime.datetime.now()),
+                str(datetime.datetime.now())[:10]))
 
-            print position, name, ID
+
     else:
-        print 'wuwuwu'
-
-        # cursor.execute('insert into tyc_staff_info values ("%s","%s","%s","%s","%s","%s","%s")' % (
-        #     keyword.decode('utf-8'), company_name, position, name, ID, str(datetime.datetime.now()),
-        #     str(datetime.datetime.now())[:10]))
+        print ' 没有主要人员的相关内容'
+        cursor.execute('insert into tyc_staff_info values ("%s","%s","%s","%s","%s","%s","%s")' % (
+            keyword.decode('utf-8'), company_name, 'no_staff_info', 'no_staff_info', 'no_staff_info', str(datetime.datetime.now()),
+            str(datetime.datetime.now())[:10]))
 
 
 ## 股东信息
-def shareholder_info(soup, cursor):
-    num = soup.select('#nav-main-holderCount > span')[0].text
-    for i in range(1, int(num) + 1):
-        shareholder = soup.select(
-            '#_container_holder > div > table > tbody > tr:nth-of-type(' + str(i) + ') > td:nth-of-type(1) > a')[0].text
-        ratio = \
-            soup.select(
-                '#_container_holder > div > table > tbody > tr:nth-of-type(' + str(i) + ') > td:nth-of-type(2)')[
-                0].text
-        value = \
-            soup.select(
-                '#_container_holder > div > table > tbody > tr:nth-of-type(' + str(i) + ') > td:nth-of-type(3)')[
-                0].text
-        print '股东: ', shareholder, ' 出资比例: ', ratio, ' 认缴出资:', value
+def shareholder_info(html, cursor):
+    if html.text.__contains__('nav-main-holderCount'):
+        soup = BeautifulSoup(html.text, 'lxml')
+    
+        num = soup.select('#nav-main-holderCount > span')[0].text
+        for i in range(1, int(num) + 1):
+            shareholder = soup.select(
+                '#_container_holder > div > table > tbody > tr:nth-of-type(' + str(i) + ') > td:nth-of-type(1) > a')[0].text
+            ratio = \
+                soup.select(
+                    '#_container_holder > div > table > tbody > tr:nth-of-type(' + str(i) + ') > td:nth-of-type(2)')[
+                    0].text
+            value = \
+                soup.select(
+                    '#_container_holder > div > table > tbody > tr:nth-of-type(' + str(i) + ') > td:nth-of-type(3)')[
+                    0].text
+            print '股东: ', shareholder, ' 出资比例: ', ratio, ' 认缴出资:', value
+            cursor.execute(
+                'insert into tyc_shareholder_info values("%s","%s","%s","%s","%s","%s","%s")' % (
+                    keyword.decode('utf-8'), company_name, shareholder, ratio, value,
+                    str(datetime.datetime.now()), str(datetime.datetime.now())[:10])
+            )
+    else:
+        print ' 没有股东信息的相关内容'
         cursor.execute(
             'insert into tyc_shareholder_info values("%s","%s","%s","%s","%s","%s","%s")' % (
-                keyword.decode('utf-8'), company_name, shareholder, ratio, value,
-                str(datetime.datetime.now()), str(datetime.datetime.now())[:10])
+                    keyword.decode('utf-8'), company_name, 'no_shareholder_info', 'no_shareholder_info', 'no_shareholder_info',
+                    str(datetime.datetime.now()), str(datetime.datetime.now())[:10])
         )
-
 
 def main():
     keyword_list = []
@@ -290,10 +301,11 @@ def main():
                                     html = get_page(url)
                                     cid = url.split('/')[-1]
                                     basic_info(html)
-                                    # print get_business_info(soup)
-                                    # cursor.execute(get_business_info(soup))
-                                    staff_info(html)
-                                    # shareholder_info(soup, cursor)
+                                    print company_name
+                                    # print get_business_info(html)
+                                    cursor.execute(get_business_info(html))
+                                    staff_info(html,cursor)
+                                    shareholder_info(html, cursor)
 
                                     conn.commit()
                                     print '插入完成'
