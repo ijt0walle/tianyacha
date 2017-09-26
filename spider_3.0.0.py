@@ -44,9 +44,11 @@ phantom.exit();
 conn = MySQLdb.connect(host="localhost", user="root", passwd="root", db="tianyancha", charset="utf8")
 cursor = conn.cursor()
 
+
 def get_proxy():
     proxy_list = list(set(urllib.urlopen(
-        'http://60.205.92.109/api.do?name=3E30E00CFEDCD468E6862270F5E728AF&status=1&type=static').read().split('\n')[:-1]))
+        'http://60.205.92.109/api.do?name=3E30E00CFEDCD468E6862270F5E728AF&status=1&type=static').read().split('\n')[
+                          :-1]))
     index = random.randint(0, len(proxy_list) - 1)
     current_proxy = proxy_list[index]
     print "NEW PROXY:\t%s" % current_proxy
@@ -59,8 +61,6 @@ def execCmd(cmd):
     text = r.read()
     r.close()
     return (text)
-
-
 
 
 def do_search_keyword(keyword):
@@ -76,10 +76,14 @@ def do_search_keyword(keyword):
         'User-Agent': 'Mozilla / 5.0(Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.113 Safari/537.36'
     }
     html = requests.get(url, proxies=proxies, headers=headers)
-
-    urls_result = re.findall('<div class="search_right_item"><div><a href="(.*?)"',html.text,re.S)
-    print urls_result
+    # print html.text
+    if html.text.__contains__('https://static.tianyancha.com/wap/images/notFound.png'):
+        urls_result=['-1']
+    else:
+        urls_result = re.findall('<div class="search_right_item"><div><a href="(.*?)"', html.text, re.S)
+    # print urls_result
     return urls_result
+
 
 # 得到soup
 def get_page(url):
@@ -91,17 +95,17 @@ def get_page(url):
         'User-Agent': 'Mozilla / 5.0(Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.113 Safari/537.36'
     }
 
-    html = requests.get(url,proxies=proxies, headers=headers)
-    print html.text
-    soup = BeautifulSoup(html.text, 'lxml')
-    return soup
+    html2 = requests.get(url, proxies=proxies, headers=headers)
+    return html2
+    # soup = BeautifulSoup(html.text, 'lxml')
+    # return soup
 
 
 ## 获取公司名和cid
-def basic_info(soup):
+def basic_info(html):
     global company_name
-
-    company_name = soup.find_all('span',class_="f18 in-block vertival-middle sec-c2")[0].text
+    soup = BeautifulSoup(html.text, 'lxml')
+    company_name = soup.find_all('span', class_="f18 in-block vertival-middle sec-c2")[0].text
     # '#company_web_top > div.companyTitleBox55.pt30.pl30.pr30 > div.company_header_width.ie9Style > div:nth-child(1) > span.f18.in-block.vertival-middle.sec-c2'
     # '#company_web_top > div.companyTitleBox55.pt30.pl30.pr30 > div.company_header_width.ie9Style > div > span.f18.in-block.vertival-middle.sec-c2'
 
@@ -110,105 +114,121 @@ def basic_info(soup):
 def get_business_info(soup):
     # 注册资本
     registered_capital = soup.select(
-        '#_container_baseInfo > div > div.baseInfo_model2017 > table > tbody > tr > td:nth-of-type(2) > div:nth-of-type(1) > div.pb10 > div')[0].text
-    print registered_capital
+        '#_container_baseInfo > div > div.baseInfo_model2017 > table > tbody > tr > td:nth-of-type(2) > div:nth-of-type(1) > div.pb10 > div')[
+        0].text
+    # print registered_capital
 
     # 注册时间
     registration_time = soup.select(
-        '#_container_baseInfo > div > div.baseInfo_model2017 > table > tbody > tr > td:nth-of-type(2) > div.new-border-bottom.pt10 > div.pb10 > div')[0].text
-    print registration_time
+        '#_container_baseInfo > div > div.baseInfo_model2017 > table > tbody > tr > td:nth-of-type(2) > div.new-border-bottom.pt10 > div.pb10 > div')[
+        0].text
+    # print registration_time
 
     # 企业状态
     company_status = soup.select(
-        '#_container_baseInfo > div > div.baseInfo_model2017 > table > tbody > tr > td:nth-of-type(2) > div:nth-of-type(3) > div:nth-of-type(2) > div')[0].text
-    print company_status
+        '#_container_baseInfo > div > div.baseInfo_model2017 > table > tbody > tr > td:nth-of-type(2) > div:nth-of-type(3) > div:nth-of-type(2) > div')[
+        0].text
+    # print company_status
 
     # 工商注册号
     business_registration_number = soup.select(
         '#_container_baseInfo > div > div.base0910 > table > tbody > tr:nth-of-type(1) > td:nth-of-type(2)')[0].text
-    print business_registration_number
+    # print business_registration_number
 
     # 组织机构代码
     organization_code = soup.select(
 
         '#_container_baseInfo > div > div.base0910 > table > tbody > tr:nth-of-type(1) > td:nth-of-type(4)')[0].text
-    print organization_code
+    # print organization_code
 
     # 统一信用代码
     uniform_credit_code = soup.select(
         '#_container_baseInfo > div > div.base0910 > table > tbody > tr:nth-of-type(2) > td:nth-of-type(2)')[0].text
-    print uniform_credit_code
+    # print uniform_credit_code
 
     # 企业类型
     enterprise_type = soup.select(
         '#_container_baseInfo > div > div.base0910 > table > tbody > tr:nth-of-type(2) > td:nth-of-type(4)')[0].text
-    print enterprise_type
+    # print enterprise_type
 
     # 纳税人识别号
     taxpayer_identification_number = soup.select(
         '#_container_baseInfo > div > div.base0910 > table > tbody > tr:nth-of-type(3) > td:nth-of-type(2)')[0].text
-    print taxpayer_identification_number
+    # print taxpayer_identification_number
 
     # 行业
     industry = soup.select(
         '#_container_baseInfo > div > div.base0910 > table > tbody > tr:nth-of-type(3) > td:nth-of-type(4)')[0].text
-    print industry
+    # print industry
 
     # 营业期限
     business_term = soup.select(
-        '#_container_baseInfo > div > div.base0910 > table > tbody > tr:nth-of-type(4) > td:nth-of-type(2) > span')[0].text
-    print business_term
+        '#_container_baseInfo > div > div.base0910 > table > tbody > tr:nth-of-type(4) > td:nth-of-type(2) > span')[
+        0].text
+    # print business_term
 
     # 核准日期
     approval_date = soup.select(
         '#_container_baseInfo > div > div.base0910 > table > tbody > tr:nth-of-type(4) > td:nth-of-type(4)')[0].text
-    print approval_date
+    # print approval_date
 
     # 登记机关
     registration_authority = soup.select(
         '#_container_baseInfo > div > div.base0910 > table > tbody > tr:nth-of-type(5) > td:nth-of-type(2)')[0].text
-    print registration_authority
+    # print registration_authority
 
     # 注册地址
     registered_address = soup.select(
         '#_container_baseInfo > div > div.base0910 > table > tbody > tr:nth-of-type(5) > td:nth-of-type(4)')[0].text
-    print registered_address
+    # print registered_address
 
     # 英文名称
     english_name = soup.select(
         '#_container_baseInfo > div > div.base0910 > table > tbody > tr:nth-of-type(6) > td:nth-of-type(2)')[0].text
-    print english_name
+    # print english_name
 
     # 经营范围
     scope_of_business = soup.select(
-        '#_container_baseInfo > div > div.base0910 > table > tbody > tr:nth-of-type(7) > td:nth-of-type(2) > span > span > span.js-full-container')[0].text
-    print scope_of_business
+        '#_container_baseInfo > div > div.base0910 > table > tbody > tr:nth-of-type(7) > td:nth-of-type(2) > span > span > span.js-full-container')[
+        0].text
+    # print scope_of_business
 
     return (
         'insert into tyc_business_info values("%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s")' % (
-            keyword.decode('utf-8'), company_name, registered_capital,registration_time,company_status,business_registration_number,organization_code,uniform_credit_code,
-    enterprise_type,taxpayer_identification_number,industry,business_term,approval_date,registration_authority,registered_address,english_name,scope_of_business,
+            keyword.decode('utf-8'), company_name, registered_capital, registration_time, company_status,
+            business_registration_number, organization_code, uniform_credit_code,
+            enterprise_type, taxpayer_identification_number, industry, business_term, approval_date,
+            registration_authority, registered_address, english_name, scope_of_business,
             str(datetime.datetime.now()), str(datetime.datetime.now())[:10])
     )
 
 
 ## 主要人员
-def staff_info(soup,cursor):
-    num = soup.select('#nav-main-staffCount > span')[0].text
+def staff_info(html):
 
-    for i in range(1, int(num) + 1):
-        position = soup.select('#_container_staff > div > div > div:nth-of-type(' + str(
-            i) + ') > div > div.in-block.f14.new-c5.pt9.pl10.overflow-width.vertival-middle ')[0].text
-        name = soup.select('#_container_staff > div > div > div:nth-of-type(' + str(i) + ') > div > a')[0].text
-        ID = soup.select('#_container_staff > div > div > div:nth-of-type(' + str(i) + ') > div > a')[0]['href']
+# def staff_info(soup, cursor):
+    if html.text.__contains__('#nav-main-staffCount')==1:
+        soup = BeautifulSoup(html.text, 'lxml')
+        num = soup.select('#nav-main-staffCount > span')[0].text
 
-        print position, name, ID
+        for i in range(1, int(num) + 1):
+            position = soup.select('#_container_staff > div > div > div:nth-of-type(' + str(
+                i) + ') > div > div.in-block.f14.new-c5.pt9.pl10.overflow-width.vertival-middle ')[0].text
+            name = soup.select('#_container_staff > div > div > div:nth-of-type(' + str(i) + ') > div > a')[0].text
+            ID = soup.select('#_container_staff > div > div > div:nth-of-type(' + str(i) + ') > div > a')[0]['href']
 
-        cursor.execute('insert into tyc_staff_info values ("%s","%s","%s","%s","%s","%s","%s")'%(
-            keyword.decode('utf-8'),company_name,position,name,ID,str(datetime.datetime.now()),str(datetime.datetime.now())[:10]))
+
+            print position, name, ID
+    else:
+        print 'wuwuwu'
+
+        # cursor.execute('insert into tyc_staff_info values ("%s","%s","%s","%s","%s","%s","%s")' % (
+        #     keyword.decode('utf-8'), company_name, position, name, ID, str(datetime.datetime.now()),
+        #     str(datetime.datetime.now())[:10]))
+
 
 ## 股东信息
-def shareholder_info(soup,cursor):
+def shareholder_info(soup, cursor):
     num = soup.select('#nav-main-holderCount > span')[0].text
     for i in range(1, int(num) + 1):
         shareholder = soup.select(
@@ -224,69 +244,75 @@ def shareholder_info(soup,cursor):
         print '股东: ', shareholder, ' 出资比例: ', ratio, ' 认缴出资:', value
         cursor.execute(
             'insert into tyc_shareholder_info values("%s","%s","%s","%s","%s","%s","%s")' % (
-                keyword.decode('utf-8'), company_name, shareholder,ratio,value,
+                keyword.decode('utf-8'), company_name, shareholder, ratio, value,
                 str(datetime.datetime.now()), str(datetime.datetime.now())[:10])
         )
 
+
 def main():
+    keyword_list = []
+    # with open("zhaopin_not_in_jsgsj_basic_info.csv", "r") as csvFile:
+    with open("zhaopin.csv", "r") as csvFile:
+
+        reader = csv.reader(csvFile)
+        for crop_name in reader:
+            item = crop_name[0]
+            keyword_list.append(item)
+    csvFile.close()
+
     conn = MySQLdb.connect(host="localhost", user="root", passwd="root", db="tianyancha", charset="utf8")
     cursor = conn.cursor()
     global keyword
     global proxies
-    with open("zhaopin_not_in_jsgsj_basic_info.csv", "r") as csvFile:
-        reader = csv.reader(csvFile)
-        for crop_name in reader:
-            keyword = crop_name[0]
-            if crop_name[0].find('company_name') == -1:
-                proxies = get_proxy()
-                urls_result=do_search_keyword(crop_name[0])
-
-                # for url in urls_result:
-                #
-                #     print url
-                #     global cid
-                #
-                #     soup = get_page(url)
-                #     cid = url.split('/')[-1]
-                #     basic_info(soup)
-                #     print cid
-                #     print company_name
-                #
-                #     cursor.execute(get_business_info(soup))
-                #     shareholder_info(soup,cursor)
-                #     staff_info(soup,cursor)
-                #     conn.commit()
-                #     time.sleep(2)
-
-                if urls_result :
-                    for url in urls_result:
-                        try :
-                            print url
-                            global cid
-
-                            soup = get_page(url)
-                            cid = url.split('/')[-1]
-                            basic_info(soup)
-                            print cid
-                            print company_name
 
 
+    for keyword in keyword_list:
 
-                            cursor.execute(get_business_info(soup))
-                            shareholder_info(soup, cursor)
-                            staff_info(soup, cursor)
+        if keyword.find('company_name') == -1:
+            while True:
+                try:
+                    proxies = get_proxy()
+
+                    urls_result = do_search_keyword(keyword)
+                    if urls_result:
+                        if urls_result[0]=='-1':
+                            print keyword + ' has no found'
+                            cursor.execute('insert tyc_log_nofound values ("%s","%s","%s")' % (
+                            keyword.decode('utf-8'), str(datetime.datetime.now()),str(datetime.datetime.now())[:10]))
                             conn.commit()
-                            print '休息一下'
-                            time.sleep(2)
-                        except :
-                            print 'error 2 with proxy do main again'
-                            main()
-                else:
-                    print 'error 1 with proxy do main again'
-                    main()
+                            print '插入nofound表'
+                            break
+                        for url in urls_result:
+                            print url
+                            while True:
+                                try:
+                                    global cid
+                                    html = get_page(url)
+                                    cid = url.split('/')[-1]
+                                    basic_info(html)
+                                    # print get_business_info(soup)
+                                    # cursor.execute(get_business_info(soup))
+                                    staff_info(html)
+                                    # shareholder_info(soup, cursor)
 
+                                    conn.commit()
+                                    print '插入完成'
+                                    break
+                                except:
+                                    print 'error 2 with proxy do main again'
+                                    continue
+                    else:
 
-    csvFile.close()
+                        print 'error 1 with proxy do main again'
+                        continue
+                    break
+                except Exception, e:
+                    if str(e).find('HTTPSConnectionPool')>=0:
+                        print 'Max retries exceeded with url'
+                        continue
+                    else:
+                        print 'unknown'
+                        continue
 
 if __name__ == "__main__":
     main()
