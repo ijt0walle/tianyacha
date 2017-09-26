@@ -78,10 +78,9 @@ def do_search_keyword(keyword):
     html = requests.get(url, proxies=proxies, headers=headers)
     # print html.text
     if html.text.__contains__('https://static.tianyancha.com/wap/images/notFound.png'):
-        urls_result=['-1']
+        urls_result = ['-1']
     else:
         urls_result = re.findall('<div class="search_right_item"><div><a href="(.*?)"', html.text, re.S)
-    # print urls_result
     return urls_result
 
 
@@ -97,8 +96,6 @@ def get_page(url):
 
     html = requests.get(url, proxies=proxies, headers=headers)
     return html
-    # soup = BeautifulSoup(html.text, 'lxml')
-    # return soup
 
 
 ## 获取公司名和cid
@@ -205,8 +202,7 @@ def get_business_info(html):
 
 
 ## 主要人员
-def staff_info(html,cursor):
-
+def staff_info(html, cursor):
     if html.text.__contains__('nav-main-staffCount'):
         soup = BeautifulSoup(html.text, 'lxml')
         num = soup.select('#nav-main-staffCount > span')[0].text
@@ -225,7 +221,8 @@ def staff_info(html,cursor):
     else:
         print ' 没有主要人员的相关内容'
         cursor.execute('insert into tyc_staff_info values ("%s","%s","%s","%s","%s","%s","%s")' % (
-            keyword.decode('utf-8'), company_name, 'no_staff_info', 'no_staff_info', 'no_staff_info', str(datetime.datetime.now()),
+            keyword.decode('utf-8'), company_name, 'no_staff_info', 'no_staff_info', 'no_staff_info',
+            str(datetime.datetime.now()),
             str(datetime.datetime.now())[:10]))
 
 
@@ -233,32 +230,46 @@ def staff_info(html,cursor):
 def shareholder_info(html, cursor):
     if html.text.__contains__('nav-main-holderCount'):
         soup = BeautifulSoup(html.text, 'lxml')
-    
+
         num = soup.select('#nav-main-holderCount > span')[0].text
-        for i in range(1, int(num) + 1):
-            shareholder = soup.select(
-                '#_container_holder > div > table > tbody > tr:nth-of-type(' + str(i) + ') > td:nth-of-type(1) > a')[0].text
-            ratio = \
-                soup.select(
-                    '#_container_holder > div > table > tbody > tr:nth-of-type(' + str(i) + ') > td:nth-of-type(2)')[
-                    0].text
-            value = \
-                soup.select(
-                    '#_container_holder > div > table > tbody > tr:nth-of-type(' + str(i) + ') > td:nth-of-type(3)')[
-                    0].text
-            print '股东: ', shareholder, ' 出资比例: ', ratio, ' 认缴出资:', value
-            cursor.execute(
-                'insert into tyc_shareholder_info values("%s","%s","%s","%s","%s","%s","%s")' % (
-                    keyword.decode('utf-8'), company_name, shareholder, ratio, value,
-                    str(datetime.datetime.now()), str(datetime.datetime.now())[:10])
-            )
+
+        all_page_no = int(num) / 20 + 1
+        last_page_no = int(num) % 20
+        for i in range(1,int(all_page_no)+1):
+            if i < int(all_page_no):
+                soup2 = get_shareholder_cookie(i)
+
+        # for i in range(1, int(num) + 1):
+        #     shareholder = soup.select(
+        #         '#_container_holder > div > table > tbody > tr:nth-of-type(' + str(i) + ') > td:nth-of-type(1) > a')[
+        #         0].text
+        #     ratio = \
+        #         soup.select(
+        #             '#_container_holder > div > table > tbody > tr:nth-of-type(' + str(i) + ') > td:nth-of-type(2)')[
+        #             0].text
+        #     value = \
+        #         soup.select(
+        #             '#_container_holder > div > table > tbody > tr:nth-of-type(' + str(i) + ') > td:nth-of-type(3)')[
+        #             0].text
+        #     print '股东: ', shareholder, ' 出资比例: ', ratio, ' 认缴出资:', value
+        #     cursor.execute(
+        #         'insert into tyc_shareholder_info values("%s","%s","%s","%s","%s","%s","%s")' % (
+        #             keyword.decode('utf-8'), company_name, shareholder, ratio, value,
+        #             str(datetime.datetime.now()), str(datetime.datetime.now())[:10])
+        #     )
     else:
         print ' 没有股东信息的相关内容'
         cursor.execute(
             'insert into tyc_shareholder_info values("%s","%s","%s","%s","%s","%s","%s")' % (
-                    keyword.decode('utf-8'), company_name, 'no_shareholder_info', 'no_shareholder_info', 'no_shareholder_info',
-                    str(datetime.datetime.now()), str(datetime.datetime.now())[:10])
+                keyword.decode('utf-8'), company_name, 'no_shareholder_info', 'no_shareholder_info',
+                'no_shareholder_info',
+                str(datetime.datetime.now()), str(datetime.datetime.now())[:10])
         )
+
+
+def get_shareholder_cookie(i):
+    pass
+
 
 def main():
     keyword_list = []
@@ -276,7 +287,6 @@ def main():
     global keyword
     global proxies
 
-
     for keyword in keyword_list:
 
         if keyword.find('company_name') == -1:
@@ -286,10 +296,11 @@ def main():
 
                     urls_result = do_search_keyword(keyword)
                     if urls_result:
-                        if urls_result[0]=='-1':
+                        if urls_result[0] == '-1':
                             print keyword + ' has no found'
                             cursor.execute('insert tyc_log_nofound values ("%s","%s","%s")' % (
-                            keyword.decode('utf-8'), str(datetime.datetime.now()),str(datetime.datetime.now())[:10]))
+                                keyword.decode('utf-8'), str(datetime.datetime.now()),
+                                str(datetime.datetime.now())[:10]))
                             conn.commit()
                             print '插入nofound表'
                             break
@@ -304,7 +315,7 @@ def main():
                                     print company_name
                                     # print get_business_info(html)
                                     cursor.execute(get_business_info(html))
-                                    staff_info(html,cursor)
+                                    staff_info(html, cursor)
                                     shareholder_info(html, cursor)
 
                                     conn.commit()
@@ -319,12 +330,13 @@ def main():
                         continue
                     break
                 except Exception, e:
-                    if str(e).find('HTTPSConnectionPool')>=0:
+                    if str(e).find('HTTPSConnectionPool') >= 0:
                         print 'Max retries exceeded with url'
                         continue
                     else:
                         print 'unknown'
                         continue
+
 
 if __name__ == "__main__":
     main()
