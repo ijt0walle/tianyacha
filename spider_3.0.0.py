@@ -62,6 +62,7 @@ def re_findall(pattern, html):
     else:
         return 'N'
 
+
 def execCmd(cmd):
     text = os.popen(cmd).read()
     return (text)
@@ -113,6 +114,7 @@ def basic_info(html):
 
 ## 工商信息
 def get_business_info(html):
+    print '爬取工商信息  '+str(datetime.datetime.now())
     soup = BeautifulSoup(html.text, 'lxml')
     # 注册资本
     registered_capital = soup.select(
@@ -207,6 +209,7 @@ def get_business_info(html):
 
 ## 主要人员
 def staff_info(html, cursor):
+    print '爬取主要人员信息  '+str(datetime.datetime.now())
     if html.text.__contains__('nav-main-staffCount'):
         soup = BeautifulSoup(html.text, 'lxml')
         num = soup.select('#nav-main-staffCount > span')[0].text
@@ -231,7 +234,8 @@ def staff_info(html, cursor):
 
 
 ### 股东信息
-def shareholder_info(html,cursor):
+def shareholder_info(html, cursor):
+    print '爬取股东信息   '+str(datetime.datetime.now())
     # def shareholder_info(html, cursor):
     if html.text.__contains__('nav-main-holderCount'):
         soup = BeautifulSoup(html.text, 'lxml')
@@ -242,51 +246,39 @@ def shareholder_info(html,cursor):
             last_page_no = int(num) % 20
             for i in range(1, int(all_page_no) + 1):
                 if i < int(all_page_no):
-                    soup2 = get_shareholder_cookie(i)
-                    res = soup2.select('tr')
+                    re_html = get_shareholder_cookie(i)
 
-                    for x in range(1, len(res)):
-                        source = str(res[x])
+                    shareholder = re.findall('title="(.*?)"', re_html)
+                    ratio = re.findall('<span class="c-money-y">(.*?)</span>',re_html)
+                    value = re.findall('<span class="">(.*?)</span>',re_html)
+                    for i in range(0, 20):
+                        # print shareholder[i]
+                        # print ratio[i]
+                        # print value[i]
 
-                        shareholder = re.findall('tyc-event-click="">(.*?)<', source)
-
-                        ratio = re.findall('<span class="c-money-y">(.*?)</span>', source)
-                        value = re.findall('<span class="">(.*?)</span>', source)
-
-                        print shareholder[0]
-                        print ratio[0]
-                        print value[0]
-                        print '------------------------'
                         cursor.execute('insert into tyc_shareholder_info values ("%s","%s","%s","%s","%s","%s","%s")' % (
-                            keyword.decode('utf-8'), company_name, shareholder[0].decode('utf-8'), ratio[0].decode('utf-8'), value[0].decode('utf-8'), str(datetime.datetime.now()),
+                            keyword.decode('utf-8'), company_name, shareholder[i], ratio[i], value[i], str(datetime.datetime.now()),
                             str(datetime.datetime.now())[:10]))
 
 
 
                 else:
-                    for x in range(1, int(last_page_no) + 1):
-                        soup2 = get_shareholder_cookie(i)
-                        res = soup2.select('tr')
-                        source = str(res[x])
-                        # print source
-                        shareholder = re.findall('tyc-event-click="">(.*?)<', source)
+                    re_html = get_shareholder_cookie(i)
+                    shareholder = re.findall('title="(.*?)"', re_html)
+                    ratio = re.findall('<span class="c-money-y">(.*?)</span>', re_html)
+                    value = re.findall('<span class="">(.*?)</span>', re_html)
 
-                        ratio = re.findall('<span class="c-money-y">(.*?)</span>', source)
-                        value = re.findall('<span class="">(.*?)</span>', source)
+                    for i in range(0, int(last_page_no)):
 
-                        print shareholder[0]
-                        print ratio[0]
-                        print value[0]
-                        print '--------------------'
+                        # print shareholder[i]
+                        # print ratio[i]
+                        # print value[i]
                         cursor.execute(
                             'insert into tyc_shareholder_info values ("%s","%s","%s","%s","%s","%s","%s")' % (
-                                keyword.decode('utf-8'),
-                                company_name,
-                                shareholder[0].decode('utf-8'),
-                                ratio[0].decode('utf-8'),
-                                value[0].decode('utf-8'),
-                                str(datetime.datetime.now()),
+                                keyword.decode('utf-8'), company_name, shareholder[i],
+                                ratio[i], value[i], str(datetime.datetime.now()),
                                 str(datetime.datetime.now())[:10]))
+
 
 
     else:
@@ -350,8 +342,11 @@ def get_shareholder_cookie(page_no):
     resp = requests.get(url, headers=head2, proxies=proxies, verify=False)
     # print resp
     html = resp.text
-    soup2 = BeautifulSoup(html, 'lxml')
-    return soup2
+    return html
+    # quit()
+    # soup2 = BeautifulSoup(html, 'lxml')
+    # return soup2
+
 
 # def main():
 #     keyword_list = []
@@ -374,42 +369,41 @@ def get_shareholder_cookie(page_no):
 #         if keyword.find('company_name') == -1:
 #             while True:
 #
-#                     proxies = get_proxy()
+#                 proxies = get_proxy()
 #
-#                     urls_result = do_search_keyword(keyword)
-#                     if urls_result:
-#                         if urls_result[0] == '-1':
-#                             print keyword + ' has no found'
-#                             cursor.execute('insert tyc_log_nofound values ("%s","%s","%s")' % (
-#                                 keyword.decode('utf-8'), str(datetime.datetime.now()),
-#                                 str(datetime.datetime.now())[:10]))
+#                 urls_result = do_search_keyword(keyword)
+#                 if urls_result:
+#                     if urls_result[0] == '-1':
+#                         print keyword + ' has no found'
+#                         cursor.execute('insert tyc_log_nofound values ("%s","%s","%s")' % (
+#                             keyword.decode('utf-8'), str(datetime.datetime.now()),
+#                             str(datetime.datetime.now())[:10]))
+#                         conn.commit()
+#                         print '插入nofound表'
+#                         break
+#                     for url in urls_result:
+#                         print url
+#                         while True:
+#                             global cid
+#                             html = get_page(url)
+#                             cid = url.split('/')[-1]
+#                             basic_info(html)
+#                             print company_name
+#
+#                             # cursor.execute(get_business_info(html))
+#                             # staff_info(html, cursor)
+#                             shareholder_info(html, cursor)
+#
 #                             conn.commit()
-#                             print '插入nofound表'
+#
+#                             print '插入完成'
 #                             break
-#                         for url in urls_result:
-#                             print url
-#                             while True:
 #
-#                                     global cid
-#                                     html = get_page(url)
-#                                     cid = url.split('/')[-1]
-#                                     basic_info(html)
-#                                     print company_name
+#                 else:
 #
-#                                     # cursor.execute(get_business_info(html))
-#                                     # staff_info(html, cursor)
-#                                     shareholder_info(html, cursor)
-#
-#                                     conn.commit()
-#
-#                                     print '插入完成'
-#                                     break
-#
-#                     else:
-#
-#                         print 'error 1 with proxy do main again'
-#                         continue
-#                     break
+#                     print 'error 1 with proxy do main again'
+#                     continue
+#                 break
 
 
 def main():
