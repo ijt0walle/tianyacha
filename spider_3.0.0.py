@@ -56,10 +56,14 @@ def get_proxy():
     return proxies
 
 
+def re_findall(pattern, html):
+    if re.findall(pattern, html, re.S):
+        return re.findall(pattern, html, re.S)
+    else:
+        return 'N'
+
 def execCmd(cmd):
-    r = os.popen(cmd)
-    text = r.read()
-    r.close()
+    text = os.popen(cmd).read()
     return (text)
 
 
@@ -226,49 +230,186 @@ def staff_info(html, cursor):
             str(datetime.datetime.now())[:10]))
 
 
-## 股东信息
-def shareholder_info(html, cursor):
+### 股东信息
+def shareholder_info(html,cursor):
+    # def shareholder_info(html, cursor):
     if html.text.__contains__('nav-main-holderCount'):
         soup = BeautifulSoup(html.text, 'lxml')
 
         num = soup.select('#nav-main-holderCount > span')[0].text
+        if num > 20:
+            all_page_no = int(num) / 20 + 1
+            last_page_no = int(num) % 20
+            for i in range(1, int(all_page_no) + 1):
+                if i < int(all_page_no):
+                    soup2 = get_shareholder_cookie(i)
+                    res = soup2.select('tr')
 
-        all_page_no = int(num) / 20 + 1
-        last_page_no = int(num) % 20
-        for i in range(1,int(all_page_no)+1):
-            if i < int(all_page_no):
-                soup2 = get_shareholder_cookie(i)
+                    for x in range(1, len(res)):
+                        source = str(res[x])
 
-        # for i in range(1, int(num) + 1):
-        #     shareholder = soup.select(
-        #         '#_container_holder > div > table > tbody > tr:nth-of-type(' + str(i) + ') > td:nth-of-type(1) > a')[
-        #         0].text
-        #     ratio = \
-        #         soup.select(
-        #             '#_container_holder > div > table > tbody > tr:nth-of-type(' + str(i) + ') > td:nth-of-type(2)')[
-        #             0].text
-        #     value = \
-        #         soup.select(
-        #             '#_container_holder > div > table > tbody > tr:nth-of-type(' + str(i) + ') > td:nth-of-type(3)')[
-        #             0].text
-        #     print '股东: ', shareholder, ' 出资比例: ', ratio, ' 认缴出资:', value
-        #     cursor.execute(
-        #         'insert into tyc_shareholder_info values("%s","%s","%s","%s","%s","%s","%s")' % (
-        #             keyword.decode('utf-8'), company_name, shareholder, ratio, value,
-        #             str(datetime.datetime.now()), str(datetime.datetime.now())[:10])
-        #     )
+                        shareholder = re.findall('tyc-event-click="">(.*?)<', source)
+
+                        ratio = re.findall('<span class="c-money-y">(.*?)</span>', source)
+                        value = re.findall('<span class="">(.*?)</span>', source)
+
+                        print shareholder[0]
+                        print ratio[0]
+                        print value[0]
+                        print '------------------------'
+                        cursor.execute('insert into tyc_shareholder_info values ("%s","%s","%s","%s","%s","%s","%s")' % (
+                            keyword.decode('utf-8'), company_name, shareholder[0].decode('utf-8'), ratio[0].decode('utf-8'), value[0].decode('utf-8'), str(datetime.datetime.now()),
+                            str(datetime.datetime.now())[:10]))
+
+
+
+                else:
+                    for x in range(1, int(last_page_no) + 1):
+                        soup2 = get_shareholder_cookie(i)
+                        res = soup2.select('tr')
+                        source = str(res[x])
+                        # print source
+                        shareholder = re.findall('tyc-event-click="">(.*?)<', source)
+
+                        ratio = re.findall('<span class="c-money-y">(.*?)</span>', source)
+                        value = re.findall('<span class="">(.*?)</span>', source)
+
+                        print shareholder[0]
+                        print ratio[0]
+                        print value[0]
+                        print '--------------------'
+                        cursor.execute(
+                            'insert into tyc_shareholder_info values ("%s","%s","%s","%s","%s","%s","%s")' % (
+                                keyword.decode('utf-8'),
+                                company_name,
+                                shareholder[0].decode('utf-8'),
+                                ratio[0].decode('utf-8'),
+                                value[0].decode('utf-8'),
+                                str(datetime.datetime.now()),
+                                str(datetime.datetime.now())[:10]))
+
+
     else:
         print ' 没有股东信息的相关内容'
-        cursor.execute(
-            'insert into tyc_shareholder_info values("%s","%s","%s","%s","%s","%s","%s")' % (
-                keyword.decode('utf-8'), company_name, 'no_shareholder_info', 'no_shareholder_info',
-                'no_shareholder_info',
-                str(datetime.datetime.now()), str(datetime.datetime.now())[:10])
-        )
+        cursor.execute('insert into tyc_shareholder_info values ("%s","%s","%s","%s","%s","%s","%s")' % (
+            keyword.decode('utf-8'), company_name, 'no_shareholder_info', 'no_shareholder_info', 'no_shareholder_info',
+            str(datetime.datetime.now()),
+            str(datetime.datetime.now())[:10]))
 
 
-def get_shareholder_cookie(i):
-    pass
+def get_shareholder_cookie(page_no):
+    timestamp = int(time.time() * 1000)
+    head1 = {
+        'Content-Type': 'application/json; charset=UTF-8',
+        'Host': 'www.tianyancha.com',
+        'Origin': 'https://www.tianyancha.com',
+        'Referer': 'https://www.tianyancha.com',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.75 Safari/537.36',
+        'Accept': 'application/json, text/javascript, */*; q=0.01',
+        'X-Requested-With': 'XMLHttpRequest'
+    }
+    tongji_url = "https://www.tianyancha.com/tongji/" + cid + ".json?_=" + str(timestamp)
+
+    tongji_page = requests.get(tongji_url, headers=head1, proxies=proxies, verify=False)
+
+    cookie = tongji_page.cookies.get_dict()
+    js_code = "".join([chr(int(code)) for code in tongji_page.json()["data"].split(",")])
+
+    token = re.findall(r"token=(\w+);", js_code)[0]
+    utm_code = re.findall("return'([^']*?)'", js_code)[0]
+    t = ord(cid[0])
+
+    fw = open("D:\\PycharmProjects\\tianyacha\\rsid.js", "wb+")
+    fw.write('var t = "' + str(t) + '",wtf = "' + utm_code + '";' + static_js_code)
+    fw.close()
+    phantomResStr = execCmd('phantomjs D:/PycharmProjects/tianyacha/rsid.js')
+    # --print phantomResStr
+    # print "phantomResStr: %s" % phantomResStr
+    phantomRes = json.loads(phantomResStr)
+    ssuid = phantomRes["ssuid"]
+    utm = phantomRes["utm"]
+
+    head2 = {
+        'Host': 'www.tianyancha.com',
+        # 'Referer': 'https://www.tianyancha.com/company/22822',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.75 Safari/537.36',
+        'Accept-Language': 'zh-CN,zh;q=0.8',
+        'Connection': 'keep-alive',
+        'Accept': '*/*',
+        'Accept-Encoding': 'gzip, deflate, sdch, br',
+        'Cookie': 'ssuid=' + ssuid + '; token=' + token + '; _utm=' + utm + '; aliyungf_tc=' + cookie[
+            "aliyungf_tc"] + '; TYCID=' + cookie["TYCID"] + '; csrfToken=' + cookie["csrfToken"] + '; uccid=' +
+                  cookie["uccid"],
+        'X-Requested-With': 'XMLHttpRequest'
+    }
+
+    url = 'https://www.tianyancha.com/pagination/holder.xhtml?ps=20&pn=' + str(
+        page_no) + '&id=' + cid + '&_=' + str(
+        timestamp - 1)
+
+    resp = requests.get(url, headers=head2, proxies=proxies, verify=False)
+    # print resp
+    html = resp.text
+    soup2 = BeautifulSoup(html, 'lxml')
+    return soup2
+
+# def main():
+#     keyword_list = []
+#     # with open("zhaopin_not_in_jsgsj_basic_info.csv", "r") as csvFile:
+#     with open("zhaopin.csv", "r") as csvFile:
+#
+#         reader = csv.reader(csvFile)
+#         for crop_name in reader:
+#             item = crop_name[0]
+#             keyword_list.append(item)
+#     csvFile.close()
+#
+#     conn = MySQLdb.connect(host="localhost", user="root", passwd="root", db="tianyancha", charset="utf8")
+#     cursor = conn.cursor()
+#     global keyword
+#     global proxies
+#
+#     for keyword in keyword_list:
+#
+#         if keyword.find('company_name') == -1:
+#             while True:
+#
+#                     proxies = get_proxy()
+#
+#                     urls_result = do_search_keyword(keyword)
+#                     if urls_result:
+#                         if urls_result[0] == '-1':
+#                             print keyword + ' has no found'
+#                             cursor.execute('insert tyc_log_nofound values ("%s","%s","%s")' % (
+#                                 keyword.decode('utf-8'), str(datetime.datetime.now()),
+#                                 str(datetime.datetime.now())[:10]))
+#                             conn.commit()
+#                             print '插入nofound表'
+#                             break
+#                         for url in urls_result:
+#                             print url
+#                             while True:
+#
+#                                     global cid
+#                                     html = get_page(url)
+#                                     cid = url.split('/')[-1]
+#                                     basic_info(html)
+#                                     print company_name
+#
+#                                     # cursor.execute(get_business_info(html))
+#                                     # staff_info(html, cursor)
+#                                     shareholder_info(html, cursor)
+#
+#                                     conn.commit()
+#
+#                                     print '插入完成'
+#                                     break
+#
+#                     else:
+#
+#                         print 'error 1 with proxy do main again'
+#                         continue
+#                     break
 
 
 def main():
@@ -313,12 +454,13 @@ def main():
                                     cid = url.split('/')[-1]
                                     basic_info(html)
                                     print company_name
-                                    # print get_business_info(html)
+
                                     cursor.execute(get_business_info(html))
                                     staff_info(html, cursor)
                                     shareholder_info(html, cursor)
 
                                     conn.commit()
+
                                     print '插入完成'
                                     break
                                 except:
@@ -336,6 +478,7 @@ def main():
                     else:
                         print 'unknown'
                         continue
+
 
 
 if __name__ == "__main__":
