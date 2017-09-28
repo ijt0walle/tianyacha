@@ -71,7 +71,7 @@ def execCmd(cmd):
 def do_search_keyword(keyword):
     #    北京百度网讯科技有限公司
     # keyword = raw_input('请输入企业名称、人名、产品名称或其它关键词 ：')
-    url = 'https://www.tianyancha.com/search?key=' + urllib.quote(keyword) + '&checkFrom=searchBox'
+    url = 'https://www.tianyancha.com/search?key=' + urllib.quote(keyword.encode('utf8')) + '&checkFrom=searchBox'
     print url
     headers = {
         'Cookie': 'TYCID=8c420960894b11e79bb7cf4adc554d53; uccid=baeee58fe4d1d697092e61f6525e8719; ssuid=6805162414; aliyungf_tc=AQAAAOsOUQId4QcAlaRf3mqAPMUDMG/2; csrfToken=S2nttCpDrr4WCbvLkQRClEUt; bannerFlag=true; _csrf=i6MDX6NEr+KEpAxRAcWeaA==; OA=cxAohDKsDZv4yk4sQ70GtLb5KtPEhEnIp/d25AgGeuU=; _csrf_bk=76b9aab25bdab0db8930d22ee4171984; Hm_lvt_e92c8d65d92d534b0fc290df538b4758=1503634325,1504143041,1504148840,1504245847; Hm_lpvt_e92c8d65d92d534b0fc290df538b4758=1504490343',
@@ -114,7 +114,7 @@ def basic_info(html):
 
 ## 工商信息
 def get_business_info(html):
-    print '爬取工商信息  '+str(datetime.datetime.now())
+    print '爬取工商信息  ' + str(datetime.datetime.now())
     soup = BeautifulSoup(html.text, 'lxml')
     # 注册资本
     registered_capital = soup.select(
@@ -199,7 +199,7 @@ def get_business_info(html):
 
     return (
         'insert into tyc_business_info values("%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s")' % (
-            keyword.decode('utf-8'), company_name, registered_capital, registration_time, company_status,
+            keyword, company_name, registered_capital, registration_time, company_status,
             business_registration_number, organization_code, uniform_credit_code,
             enterprise_type, taxpayer_identification_number, industry, business_term, approval_date,
             registration_authority, registered_address, english_name, scope_of_business,
@@ -209,7 +209,7 @@ def get_business_info(html):
 
 ## 主要人员
 def staff_info(html, cursor):
-    print '爬取主要人员信息  '+str(datetime.datetime.now())
+    print '爬取主要人员信息  ' + str(datetime.datetime.now())
     if html.text.__contains__('nav-main-staffCount'):
         soup = BeautifulSoup(html.text, 'lxml')
         num = soup.select('#nav-main-staffCount > span')[0].text
@@ -221,21 +221,21 @@ def staff_info(html, cursor):
             ID = soup.select('#_container_staff > div > div > div:nth-of-type(' + str(i) + ') > div > a')[0]['href']
 
             cursor.execute('insert into tyc_staff_info values ("%s","%s","%s","%s","%s","%s","%s")' % (
-                keyword.decode('utf-8'), company_name, position, name, ID, str(datetime.datetime.now()),
+                keyword, company_name, position, name, ID, str(datetime.datetime.now()),
                 str(datetime.datetime.now())[:10]))
 
 
     else:
         print ' 没有主要人员的相关内容'
         cursor.execute('insert into tyc_staff_info values ("%s","%s","%s","%s","%s","%s","%s")' % (
-            keyword.decode('utf-8'), company_name, 'no_staff_info', 'no_staff_info', 'no_staff_info',
+            keyword, company_name, 'no_staff_info', 'no_staff_info', 'no_staff_info',
             str(datetime.datetime.now()),
             str(datetime.datetime.now())[:10]))
 
 
 ### 股东信息
 def shareholder_info(html, cursor):
-    print '爬取股东信息   '+str(datetime.datetime.now())
+    print '爬取股东信息   ' + str(datetime.datetime.now())
     # def shareholder_info(html, cursor):
     if html.text.__contains__('nav-main-holderCount'):
         soup = BeautifulSoup(html.text, 'lxml')
@@ -249,16 +249,18 @@ def shareholder_info(html, cursor):
                     re_html = get_shareholder_cookie(i)
 
                     shareholder = re.findall('title="(.*?)"', re_html)
-                    ratio = re.findall('<span class="c-money-y">(.*?)</span>',re_html)
-                    value = re.findall('<span class="">(.*?)</span>',re_html)
+                    ratio = re.findall('<span class="c-money-y">(.*?)</span>', re_html)
+                    value = re.findall('<span class="">(.*?)</span>', re_html)
                     for i in range(0, 20):
                         # print shareholder[i]
                         # print ratio[i]
                         # print value[i]
 
-                        cursor.execute('insert into tyc_shareholder_info values ("%s","%s","%s","%s","%s","%s","%s")' % (
-                            keyword.decode('utf-8'), company_name, shareholder[i], ratio[i], value[i], str(datetime.datetime.now()),
-                            str(datetime.datetime.now())[:10]))
+                        cursor.execute(
+                            'insert into tyc_shareholder_info values ("%s","%s","%s","%s","%s","%s","%s")' % (
+                                keyword, company_name, shareholder[i], ratio[i], value[i],
+                                str(datetime.datetime.now()),
+                                str(datetime.datetime.now())[:10]))
 
 
 
@@ -269,13 +271,12 @@ def shareholder_info(html, cursor):
                     value = re.findall('<span class="">(.*?)</span>', re_html)
 
                     for i in range(0, int(last_page_no)):
-
                         # print shareholder[i]
                         # print ratio[i]
                         # print value[i]
                         cursor.execute(
                             'insert into tyc_shareholder_info values ("%s","%s","%s","%s","%s","%s","%s")' % (
-                                keyword.decode('utf-8'), company_name, shareholder[i],
+                                keyword, company_name, shareholder[i],
                                 ratio[i], value[i], str(datetime.datetime.now()),
                                 str(datetime.datetime.now())[:10]))
 
@@ -284,7 +285,7 @@ def shareholder_info(html, cursor):
     else:
         print ' 没有股东信息的相关内容'
         cursor.execute('insert into tyc_shareholder_info values ("%s","%s","%s","%s","%s","%s","%s")' % (
-            keyword.decode('utf-8'), company_name, 'no_shareholder_info', 'no_shareholder_info', 'no_shareholder_info',
+            keyword, company_name, 'no_shareholder_info', 'no_shareholder_info', 'no_shareholder_info',
             str(datetime.datetime.now()),
             str(datetime.datetime.now())[:10]))
 
@@ -407,13 +408,15 @@ def get_shareholder_cookie(page_no):
 
 
 def main():
+    searched_list = []
     keyword_list = []
+    to_search_list = []
     # with open("zhaopin_not_in_jsgsj_basic_info.csv", "r") as csvFile:
     with open("zhaopin.csv", "r") as csvFile:
 
         reader = csv.reader(csvFile)
         for crop_name in reader:
-            item = crop_name[0]
+            item = crop_name[0].decode('utf-8')
             keyword_list.append(item)
     csvFile.close()
 
@@ -421,9 +424,18 @@ def main():
     cursor = conn.cursor()
     global keyword
     global proxies
+    cursor.execute('select keyword from tyc_business_info union select keyword from tyc_log_nofound')
+    data = cursor.fetchall()
 
-    for keyword in keyword_list:
+    for x in range(len(data)):
+        searched_list.append(data[x][0])
 
+
+    for item in keyword_list:
+        if item not in searched_list:
+            to_search_list.append(item)
+
+    for keyword in to_search_list:
         if keyword.find('company_name') == -1:
             while True:
                 try:
@@ -434,7 +446,7 @@ def main():
                         if urls_result[0] == '-1':
                             print keyword + ' has no found'
                             cursor.execute('insert tyc_log_nofound values ("%s","%s","%s")' % (
-                                keyword.decode('utf-8'), str(datetime.datetime.now()),
+                                keyword, str(datetime.datetime.now()),
                                 str(datetime.datetime.now())[:10]))
                             conn.commit()
                             print '插入nofound表'
@@ -472,7 +484,6 @@ def main():
                     else:
                         print 'unknown'
                         continue
-
 
 
 if __name__ == "__main__":
