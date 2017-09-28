@@ -408,113 +408,137 @@ def get_shareholder_cookie(page_no):
 
 
 def main():
+    conn = MySQLdb.connect(host="localhost", user="root", passwd="root", db="tianyancha", charset="utf8")
+    cursor = conn.cursor()
+
+    global keyword
+    global proxies
+
     searched_list = []
     keyword_list = []
-    bad_url_list = []
     to_search_list = []
     with open("zhaopin_not_in_jsgsj_basic_info.csv", "r") as csvFile:
     # with open("zhaopin.csv", "r") as csvFile:
-
         reader = csv.reader(csvFile)
         for crop_name in reader:
             item = crop_name[0].decode('utf-8')
             keyword_list.append(item)
     csvFile.close()
+    # 读取csv文件
 
-    conn = MySQLdb.connect(host="localhost", user="root", passwd="root", db="tianyancha", charset="utf8")
-    cursor = conn.cursor()
-    global keyword
-    global proxies
+
+
     cursor.execute('select keyword from tyc_business_info union select keyword from tyc_log_nofound')
     data = cursor.fetchall()
 
     for x in range(len(data)):
         searched_list.append(data[x][0])
 
-    # cursor.execute('select url from tyc_fail_insert')
-    # bad_url = cursor.fetchall()
-    #
-    # for x in range(len(bad_url)):
-    #     bad_url_list.append(bad_url[x][0])
+    # searched_list是已经爬过的正确入库和没有查询到结果的关键词列表
 
     for item in keyword_list:
         if item not in searched_list:
             to_search_list.append(item)
 
+    # to_search_list是等待爬取的关键词
+
 
 
     for keyword in to_search_list:
+        #去数据开始爬
 
         if keyword.find('company_name') == -1:
+            #抛开开头的company_name列表名
+
             while True:
-                try:
+                # try:
                     proxies = get_proxy()
+                    # 启动代理
 
                     urls_result = do_search_keyword(keyword)
+                    # 搜索页的页面列表
+
                     if urls_result:
+                        # 存在内容
                         if urls_result[0] == '-1':
+                            # 没有内容
                             print keyword + ' has no found'
                             cursor.execute('insert tyc_log_nofound values ("%s","%s","%s")' % (
                                 keyword, str(datetime.datetime.now()),
                                 str(datetime.datetime.now())[:10]))
                             conn.commit()
+                            # 插进nofound表
                             print '插入nofound表'
-                            break
-                        for url in urls_result:
-                            print url
-                            cursor.execute('select url from tyc_fail_insert')
-                            bad_url = cursor.fetchall()
+                            main()
+                            # 调用main方法以更新nofound表
+                        else:
+                            for url in urls_result:
 
-                            for x in range(len(bad_url)):
-                                bad_url_list.append(bad_url[x][0])
-
-                            if url not in bad_url_list:
                                 count = 0
-
+                                # 计数器count
                                 while True:
 
-                                    try:
-                                        global cid
-                                        html = get_page(url)
-                                        cid = url.split('/')[-1]
-                                        basic_info(html)
-                                        print company_name
+                                    # try:
+                                        cursor.execute('select url from tyc_fail_insert')
+                                        bad_url = cursor.fetchall()
 
-                                        cursor.execute(get_business_info(html))
-                                        staff_info(html, cursor)
-                                        shareholder_info(html, cursor)
+                                        for x in range(len(bad_url)):
+                                            bad_url_list=[]
+                                            bad_url_list.append(bad_url[x][0])
+                                        # 获取爬取失败的url
+                                        if url not in bad_url_list:
+                                            # 获取在urls_result中,但不在bad_url_list里的url
 
-                                        conn.commit()
+                                            global cid
+                                            html = get_page(url)
+                                            cid = url.split('/')[-1]
+                                            basic_info(html)
+                                            print company_name
 
-                                        print '插入完成'
-                                        break
-                                    except:
-                                        print 'error 2 with proxy do main again'
-                                        count +=1
-                                        if count<10:
-                                            continue
+                                            cursor.execute(get_business_info(html))
+                                            staff_info(html, cursor)
+                                            shareholder_info(html, cursor)
 
-                                        else :
-                                            cursor.execute('insert tyc_fail_insert values ("%s","%s","%s","%s","%s")' % (
-                                                keyword, company_name, url, str(datetime.datetime.now()),
-                                                str(datetime.datetime.now())[:10]))
-                                            print company_name +' fail to get '
                                             conn.commit()
-                                            main()
-                                else:
-                                    print '123'
-                    else:
 
-                        print 'error 1 with proxy do main again'
-                        continue
-                    break
-                except Exception, e:
-                    if str(e).find('HTTPSConnectionPool') >= 0:
-                        print 'Max retries exceeded with url'
-                        continue
-                    else:
-                        print 'unknown'
-                        continue
+                                            print '插入完成'
+                                            break
+                                    # except:
+                                    #     print 'error 2 with proxy do main again'
+                                    #     # 出错后计时器加一
+                                    #     count +=1
+                                    #     print count
+                                    #     if count<10:
+                                    #         continue
+                                    #         # 错十次以内再试一次
+                                    #     else :
+                                    #
+                                    #         cursor.execute('insert tyc_fail_insert values ("%s","%s","%s","%s","%s")' % (
+                                    #             keyword, 'com',url, str(datetime.datetime.now()),
+                                    #             str(datetime.datetime.now())[:10]))
+                                    #         # 相关关键词,公司名和url插入到 插入失败的统计表里
+                                    #         print '111 fail to get '
+                                    #         conn.commit()
+                                    #         main()
+                                    #         # 再次执行main()
+                    # #else:
+                    # #
+                    # #    print 'error 1 with proxy do main again'
+                    # #    continue
+                    # #break
+                # except Exception, e:
+                #     if str(e).find('HTTPSConnectionPool') >= 0:
+                #         print 'Max retries exceeded with url'
+                #         continue
+                #     else:
+                #         print 'unknown'
+                #         cursor.execute('insert tyc_fail_insert values ("%s","%s","%s","%s","%s")' % (
+                #             keyword,'com', url, str(datetime.datetime.now()),
+                #             str(datetime.datetime.now())[:10]))
+                #         # 相关关键词,公司名和url插入到 插入失败的统计表里
+                #         print '222 fail to get '
+                #         conn.commit()
+                #         continue
 
 
 if __name__ == "__main__":
