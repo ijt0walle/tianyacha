@@ -410,9 +410,10 @@ def get_shareholder_cookie(page_no):
 def main():
     searched_list = []
     keyword_list = []
+    bad_url_list = []
     to_search_list = []
-    # with open("zhaopin_not_in_jsgsj_basic_info.csv", "r") as csvFile:
-    with open("zhaopin.csv", "r") as csvFile:
+    with open("zhaopin_not_in_jsgsj_basic_info.csv", "r") as csvFile:
+    # with open("zhaopin.csv", "r") as csvFile:
 
         reader = csv.reader(csvFile)
         for crop_name in reader:
@@ -430,12 +431,20 @@ def main():
     for x in range(len(data)):
         searched_list.append(data[x][0])
 
+    # cursor.execute('select url from tyc_fail_insert')
+    # bad_url = cursor.fetchall()
+    #
+    # for x in range(len(bad_url)):
+    #     bad_url_list.append(bad_url[x][0])
 
     for item in keyword_list:
         if item not in searched_list:
             to_search_list.append(item)
 
+
+
     for keyword in to_search_list:
+
         if keyword.find('company_name') == -1:
             while True:
                 try:
@@ -453,25 +462,47 @@ def main():
                             break
                         for url in urls_result:
                             print url
-                            while True:
-                                try:
-                                    global cid
-                                    html = get_page(url)
-                                    cid = url.split('/')[-1]
-                                    basic_info(html)
-                                    print company_name
+                            cursor.execute('select url from tyc_fail_insert')
+                            bad_url = cursor.fetchall()
 
-                                    cursor.execute(get_business_info(html))
-                                    staff_info(html, cursor)
-                                    shareholder_info(html, cursor)
+                            for x in range(len(bad_url)):
+                                bad_url_list.append(bad_url[x][0])
 
-                                    conn.commit()
+                            if url not in bad_url_list:
+                                count = 0
 
-                                    print '插入完成'
-                                    break
-                                except:
-                                    print 'error 2 with proxy do main again'
-                                    continue
+                                while True:
+
+                                    try:
+                                        global cid
+                                        html = get_page(url)
+                                        cid = url.split('/')[-1]
+                                        basic_info(html)
+                                        print company_name
+
+                                        cursor.execute(get_business_info(html))
+                                        staff_info(html, cursor)
+                                        shareholder_info(html, cursor)
+
+                                        conn.commit()
+
+                                        print '插入完成'
+                                        break
+                                    except:
+                                        print 'error 2 with proxy do main again'
+                                        count +=1
+                                        if count<10:
+                                            continue
+
+                                        else :
+                                            cursor.execute('insert tyc_fail_insert values ("%s","%s","%s","%s","%s")' % (
+                                                keyword, company_name, url, str(datetime.datetime.now()),
+                                                str(datetime.datetime.now())[:10]))
+                                            print company_name +' fail to get '
+                                            conn.commit()
+                                            main()
+                                else:
+                                    print '123'
                     else:
 
                         print 'error 1 with proxy do main again'
