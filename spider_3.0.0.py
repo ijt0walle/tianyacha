@@ -41,8 +41,8 @@ console.log("{\\"utm\\":\\""+utm+"\\",\\"ssuid\\":\\""+Math.round(2147483647 * M
 phantom.exit();
 """
 
-conn = MySQLdb.connect(host="localhost", user="root", passwd="root", db="tianyancha", charset="utf8")
-cursor = conn.cursor()
+# conn = MySQLdb.connect(host="localhost", user="root", passwd="root", db="tianyancha", charset="utf8")
+# cursor = conn.cursor()
 
 
 def get_proxy():
@@ -69,7 +69,7 @@ def execCmd(cmd):
 
 
 def do_search_keyword(keyword):
-    #    北京百度网讯科技有限公司
+
     # keyword = raw_input('请输入企业名称、人名、产品名称或其它关键词 ：')
     url = 'https://www.tianyancha.com/search?key=' + urllib.quote(keyword.encode('utf8')) + '&checkFrom=searchBox'
     print url
@@ -120,13 +120,11 @@ def get_business_info(html):
     registered_capital = soup.select(
         '#_container_baseInfo > div > div.baseInfo_model2017 > table > tbody > tr > td:nth-of-type(2) > div:nth-of-type(1) > div.pb10 > div')[
         0].text
-    # print registered_capital
 
     # 注册时间
     registration_time = soup.select(
         '#_container_baseInfo > div > div.baseInfo_model2017 > table > tbody > tr > td:nth-of-type(2) > div.new-border-bottom.pt10 > div.pb10 > div')[
         0].text
-    # print registration_time
 
     # 企业状态
     company_status = soup.select(
@@ -137,65 +135,54 @@ def get_business_info(html):
     # 工商注册号
     business_registration_number = soup.select(
         '#_container_baseInfo > div > div.base0910 > table > tbody > tr:nth-of-type(1) > td:nth-of-type(2)')[0].text
-    # print business_registration_number
 
     # 组织机构代码
     organization_code = soup.select(
 
         '#_container_baseInfo > div > div.base0910 > table > tbody > tr:nth-of-type(1) > td:nth-of-type(4)')[0].text
-    # print organization_code
 
     # 统一信用代码
     uniform_credit_code = soup.select(
         '#_container_baseInfo > div > div.base0910 > table > tbody > tr:nth-of-type(2) > td:nth-of-type(2)')[0].text
-    # print uniform_credit_code
 
     # 企业类型
     enterprise_type = soup.select(
         '#_container_baseInfo > div > div.base0910 > table > tbody > tr:nth-of-type(2) > td:nth-of-type(4)')[0].text
-    # print enterprise_type
 
     # 纳税人识别号
     taxpayer_identification_number = soup.select(
         '#_container_baseInfo > div > div.base0910 > table > tbody > tr:nth-of-type(3) > td:nth-of-type(2)')[0].text
-    # print taxpayer_identification_number
 
     # 行业
     industry = soup.select(
         '#_container_baseInfo > div > div.base0910 > table > tbody > tr:nth-of-type(3) > td:nth-of-type(4)')[0].text
-    # print industry
 
     # 营业期限
     business_term = soup.select(
         '#_container_baseInfo > div > div.base0910 > table > tbody > tr:nth-of-type(4) > td:nth-of-type(2) > span')[
         0].text
-    # print business_term
 
     # 核准日期
     approval_date = soup.select(
         '#_container_baseInfo > div > div.base0910 > table > tbody > tr:nth-of-type(4) > td:nth-of-type(4)')[0].text
-    # print approval_date
 
     # 登记机关
     registration_authority = soup.select(
         '#_container_baseInfo > div > div.base0910 > table > tbody > tr:nth-of-type(5) > td:nth-of-type(2)')[0].text
-    # print registration_authority
 
     # 注册地址
     registered_address = soup.select(
         '#_container_baseInfo > div > div.base0910 > table > tbody > tr:nth-of-type(5) > td:nth-of-type(4)')[0].text
-    # print registered_address
 
     # 英文名称
     english_name = soup.select(
         '#_container_baseInfo > div > div.base0910 > table > tbody > tr:nth-of-type(6) > td:nth-of-type(2)')[0].text
-    # print english_name
 
     # 经营范围
     scope_of_business = soup.select(
         '#_container_baseInfo > div > div.base0910 > table > tbody > tr:nth-of-type(7) > td:nth-of-type(2) > span > span > span.js-full-container')[
         0].text
-    # print scope_of_business
+
 
     return (
         'insert into tyc_business_info values("%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s")' % (
@@ -236,7 +223,7 @@ def staff_info(html, cursor):
 ### 股东信息
 def shareholder_info(html, cursor):
     print '爬取股东信息   ' + str(datetime.datetime.now())
-    # def shareholder_info(html, cursor):
+
     if html.text.__contains__('nav-main-holderCount'):
         soup = BeautifulSoup(html.text, 'lxml')
 
@@ -349,197 +336,125 @@ def get_shareholder_cookie(page_no):
     # return soup2
 
 
-# def main():
-#     keyword_list = []
-#     # with open("zhaopin_not_in_jsgsj_basic_info.csv", "r") as csvFile:
-#     with open("zhaopin.csv", "r") as csvFile:
-#
-#         reader = csv.reader(csvFile)
-#         for crop_name in reader:
-#             item = crop_name[0]
-#             keyword_list.append(item)
-#     csvFile.close()
-#
-#     conn = MySQLdb.connect(host="localhost", user="root", passwd="root", db="tianyancha", charset="utf8")
-#     cursor = conn.cursor()
-#     global keyword
-#     global proxies
-#
-#     for keyword in keyword_list:
-#
-#         if keyword.find('company_name') == -1:
-#             while True:
-#
-#                 proxies = get_proxy()
-#
-#                 urls_result = do_search_keyword(keyword)
-#                 if urls_result:
-#                     if urls_result[0] == '-1':
-#                         print keyword + ' has no found'
-#                         cursor.execute('insert tyc_log_nofound values ("%s","%s","%s")' % (
-#                             keyword.decode('utf-8'), str(datetime.datetime.now()),
-#                             str(datetime.datetime.now())[:10]))
-#                         conn.commit()
-#                         print '插入nofound表'
-#                         break
-#                     for url in urls_result:
-#                         print url
-#                         while True:
-#                             global cid
-#                             html = get_page(url)
-#                             cid = url.split('/')[-1]
-#                             basic_info(html)
-#                             print company_name
-#
-#                             # cursor.execute(get_business_info(html))
-#                             # staff_info(html, cursor)
-#                             shareholder_info(html, cursor)
-#
-#                             conn.commit()
-#
-#                             print '插入完成'
-#                             break
-#
-#                 else:
-#
-#                     print 'error 1 with proxy do main again'
-#                     continue
-#                 break
+
 
 
 def main():
-    conn = MySQLdb.connect(host="localhost", user="root", passwd="root", db="tianyancha", charset="utf8")
-    cursor = conn.cursor()
 
-    global keyword
-    global proxies
+    while True:
 
-    searched_list = []
-    keyword_list = []
-    to_search_list = []
-    with open("zhaopin_not_in_jsgsj_basic_info.csv", "r") as csvFile:
-    # with open("zhaopin.csv", "r") as csvFile:
-        reader = csv.reader(csvFile)
-        for crop_name in reader:
-            item = crop_name[0].decode('utf-8')
-            keyword_list.append(item)
-    csvFile.close()
-    # 读取csv文件
+        searched_list = []
+        keyword_list = []
+        to_search_list = []
+        with open("label.csv", "r") as csvFile:
+        # with open("zhaopin.csv", "r") as csvFile:
+
+            reader = csv.reader(csvFile)
+            for crop_name in reader:
+                item = crop_name[0].decode('utf-8')
+                keyword_list.append(item)
+        csvFile.close()
 
 
+        global keyword
+        global proxies
+        cursor.execute('select keyword from tyc_business_info union select keyword from tyc_log_nofound')
+        data = cursor.fetchall()
 
-    cursor.execute('select keyword from tyc_business_info union select keyword from tyc_log_nofound')
-    data = cursor.fetchall()
+        for x in range(len(data)):
+            searched_list.append(data[x][0])
 
-    for x in range(len(data)):
-        searched_list.append(data[x][0])
 
-    # searched_list是已经爬过的正确入库和没有查询到结果的关键词列表
-
-    for item in keyword_list:
-        if item not in searched_list:
-            to_search_list.append(item)
-
-    # to_search_list是等待爬取的关键词
+        for item in keyword_list:
+            if item not in searched_list:
+                to_search_list.append(item)
 
 
 
-    for keyword in to_search_list:
-        #去数据开始爬
+        for keyword in to_search_list[1:]:
+            print keyword
 
-        if keyword.find('company_name') == -1:
-            #抛开开头的company_name列表名
-
+            count2= 0
             while True:
-                # try:
+                try:
                     proxies = get_proxy()
-                    # 启动代理
 
                     urls_result = do_search_keyword(keyword)
-                    # 搜索页的页面列表
-
                     if urls_result:
-                        # 存在内容
                         if urls_result[0] == '-1':
-                            # 没有内容
                             print keyword + ' has no found'
                             cursor.execute('insert tyc_log_nofound values ("%s","%s","%s")' % (
                                 keyword, str(datetime.datetime.now()),
                                 str(datetime.datetime.now())[:10]))
                             conn.commit()
-                            # 插进nofound表
                             print '插入nofound表'
-                            main()
-                            # 调用main方法以更新nofound表
+                            break
+                        for url in urls_result:
+                            print url
+
+
+                            count = 0
+
+                            while True:
+
+                                try:
+                                    global cid
+                                    html = get_page(url)
+                                    cid = url.split('/')[-1]
+                                    basic_info(html)
+                                    print company_name
+
+                                    cursor.execute(get_business_info(html))
+                                    staff_info(html, cursor)
+                                    shareholder_info(html, cursor)
+
+                                    conn.commit()
+
+                                    print '插入完成'
+                                    break
+                                except:
+                                    print 'error 2 with proxy do main again'
+                                    count +=1
+                                    if count<10:
+                                        continue
+
+                                    else :
+                                        cursor.execute('insert tyc_log_nofound values ("%s","%s","%s")' % (
+                                        keyword, str(datetime.datetime.now()),str(datetime.datetime.now())[:10]))
+                                        print ' fail to get 2 '
+                                        conn.commit()
+                                        break
+                            # else:
+                            #     print '123'
+                    else:
+
+                        print 'error 1 with proxy do main again'
+                        count2 += 1
+                        if count2 < 10:
+                            continue
+
                         else:
-                            for url in urls_result:
-
-                                count = 0
-                                # 计数器count
-                                while True:
-
-                                    # try:
-                                        cursor.execute('select url from tyc_fail_insert')
-                                        bad_url = cursor.fetchall()
-
-                                        for x in range(len(bad_url)):
-                                            bad_url_list=[]
-                                            bad_url_list.append(bad_url[x][0])
-                                        # 获取爬取失败的url
-                                        if url not in bad_url_list:
-                                            # 获取在urls_result中,但不在bad_url_list里的url
-
-                                            global cid
-                                            html = get_page(url)
-                                            cid = url.split('/')[-1]
-                                            basic_info(html)
-                                            print company_name
-
-                                            cursor.execute(get_business_info(html))
-                                            staff_info(html, cursor)
-                                            shareholder_info(html, cursor)
-
-                                            conn.commit()
-
-                                            print '插入完成'
-                                            break
-                                    # except:
-                                    #     print 'error 2 with proxy do main again'
-                                    #     # 出错后计时器加一
-                                    #     count +=1
-                                    #     print count
-                                    #     if count<10:
-                                    #         continue
-                                    #         # 错十次以内再试一次
-                                    #     else :
-                                    #
-                                    #         cursor.execute('insert tyc_fail_insert values ("%s","%s","%s","%s","%s")' % (
-                                    #             keyword, 'com',url, str(datetime.datetime.now()),
-                                    #             str(datetime.datetime.now())[:10]))
-                                    #         # 相关关键词,公司名和url插入到 插入失败的统计表里
-                                    #         print '111 fail to get '
-                                    #         conn.commit()
-                                    #         main()
-                                    #         # 再次执行main()
-                    # #else:
-                    # #
-                    # #    print 'error 1 with proxy do main again'
-                    # #    continue
-                    # #break
-                # except Exception, e:
-                #     if str(e).find('HTTPSConnectionPool') >= 0:
-                #         print 'Max retries exceeded with url'
-                #         continue
-                #     else:
-                #         print 'unknown'
-                #         cursor.execute('insert tyc_fail_insert values ("%s","%s","%s","%s","%s")' % (
-                #             keyword,'com', url, str(datetime.datetime.now()),
-                #             str(datetime.datetime.now())[:10]))
-                #         # 相关关键词,公司名和url插入到 插入失败的统计表里
-                #         print '222 fail to get '
-                #         conn.commit()
-                #         continue
+                            cursor.execute('insert tyc_log_nofound values ("%s","%s","%s")' % (
+                                keyword, str(datetime.datetime.now()), str(datetime.datetime.now())[:10]))
+                            print ' fail to get 2 '
+                            conn.commit()
+                            break
+                    break
+                except Exception, e:
+                    if str(e).find('HTTPSConnectionPool') >= 0:
+                        print 'Max retries exceeded with url'
+                        continue
+                    else:
+                        print 'unknown'
+                        cursor.execute('insert tyc_log_nofound values ("%s","%s","%s")' % (
+                            keyword, str(datetime.datetime.now()), str(datetime.datetime.now())[:10]))
+                        print ' fail to get 2 '
+                        conn.commit()
+                        break
 
 
 if __name__ == "__main__":
+    conn = MySQLdb.connect(host="localhost", user="root", passwd="root", db="tianyancha", charset="utf8")
+    cursor = conn.cursor()
     main()
+    print '-=====================================================-'
