@@ -41,8 +41,6 @@ console.log("{\\"utm\\":\\""+utm+"\\",\\"ssuid\\":\\""+Math.round(2147483647 * M
 phantom.exit();
 """
 
-conn = MySQLdb.connect(host="localhost", user="root", passwd="root", db="tianyancha", charset="utf8")
-cursor = conn.cursor()
 
 
 def get_proxy():
@@ -114,7 +112,7 @@ def basic_info(html):
 
 ## 工商信息
 def get_business_info(html):
-    print '爬取工商信息  ' + str(datetime.datetime.now())
+    print u'爬取工商信息  ' + str(datetime.datetime.now())
     soup = BeautifulSoup(html.text, 'lxml')
     # 注册资本
     registered_capital = soup.select(
@@ -209,7 +207,7 @@ def get_business_info(html):
 
 ## 主要人员
 def staff_info(html, cursor):
-    print '爬取主要人员信息  ' + str(datetime.datetime.now())
+    print u'爬取主要人员信息  ' + str(datetime.datetime.now())
     if html.text.__contains__('nav-main-staffCount'):
         soup = BeautifulSoup(html.text, 'lxml')
         num = soup.select('#nav-main-staffCount > span')[0].text
@@ -226,7 +224,7 @@ def staff_info(html, cursor):
 
 
     else:
-        print ' 没有主要人员的相关内容'
+        print u' 没有主要人员的相关内容'
         cursor.execute('insert into tyc_staff_info values ("%s","%s","%s","%s","%s","%s","%s")' % (
             keyword, company_name, 'no_staff_info', 'no_staff_info', 'no_staff_info',
             str(datetime.datetime.now()),
@@ -235,7 +233,7 @@ def staff_info(html, cursor):
 
 ### 股东信息
 def shareholder_info(html, cursor):
-    print '爬取股东信息   ' + str(datetime.datetime.now())
+    print u'爬取股东信息   ' + str(datetime.datetime.now())
     # def shareholder_info(html, cursor):
     if html.text.__contains__('nav-main-holderCount'):
         soup = BeautifulSoup(html.text, 'lxml')
@@ -283,7 +281,7 @@ def shareholder_info(html, cursor):
 
 
     else:
-        print ' 没有股东信息的相关内容'
+        print u' 没有股东信息的相关内容'
         cursor.execute('insert into tyc_shareholder_info values ("%s","%s","%s","%s","%s","%s","%s")' % (
             keyword, company_name, 'no_shareholder_info', 'no_shareholder_info', 'no_shareholder_info',
             str(datetime.datetime.now()),
@@ -348,71 +346,53 @@ def get_shareholder_cookie(page_no):
     # soup2 = BeautifulSoup(html, 'lxml')
     # return soup2
 
+def do_keyword(keyword):
+    global proxies
+    proxies = get_proxy()
 
-# def main():
-#     keyword_list = []
-#     # with open("zhaopin_not_in_jsgsj_basic_info.csv", "r") as csvFile:
-#     with open("zhaopin.csv", "r") as csvFile:
-#
-#         reader = csv.reader(csvFile)
-#         for crop_name in reader:
-#             item = crop_name[0]
-#             keyword_list.append(item)
-#     csvFile.close()
-#
-#     conn = MySQLdb.connect(host="localhost", user="root", passwd="root", db="tianyancha", charset="utf8")
-#     cursor = conn.cursor()
-#     global keyword
-#     global proxies
-#
-#     for keyword in keyword_list:
-#
-#         if keyword.find('company_name') == -1:
-#             while True:
-#
-#                 proxies = get_proxy()
-#
-#                 urls_result = do_search_keyword(keyword)
-#                 if urls_result:
-#                     if urls_result[0] == '-1':
-#                         print keyword + ' has no found'
-#                         cursor.execute('insert tyc_log_nofound values ("%s","%s","%s")' % (
-#                             keyword.decode('utf-8'), str(datetime.datetime.now()),
-#                             str(datetime.datetime.now())[:10]))
-#                         conn.commit()
-#                         print '插入nofound表'
-#                         break
-#                     for url in urls_result:
-#                         print url
-#                         while True:
-#                             global cid
-#                             html = get_page(url)
-#                             cid = url.split('/')[-1]
-#                             basic_info(html)
-#                             print company_name
-#
-#                             # cursor.execute(get_business_info(html))
-#                             # staff_info(html, cursor)
-#                             shareholder_info(html, cursor)
-#
-#                             conn.commit()
-#
-#                             print '插入完成'
-#                             break
-#
-#                 else:
-#
-#                     print 'error 1 with proxy do main again'
-#                     continue
-#                 break
+    urls_result = do_search_keyword(keyword)
+    if urls_result:
+        if urls_result[0] == '-1':
+            print keyword + ' has no found'
+            cursor.execute('insert tyc_log_nofound values ("%s","%s","%s")' % (
+                keyword, str(datetime.datetime.now()),
+                str(datetime.datetime.now())[:10]))
+            conn.commit()
+            print u'插入nofound表'
 
+        else:
+            for url in urls_result:
+                print url
+
+                try:
+                    global cid
+                    html = get_page(url)
+                    cid = url.split('/')[-1]
+                    basic_info(html)
+                    print company_name
+
+                    cursor.execute(get_business_info(html))
+                    staff_info(html, cursor)
+                    shareholder_info(html, cursor)
+
+                    conn.commit()
+
+                    print u'***************插入完成**************'
+
+                except:
+                    print u'error 2 with proxy do main again'
+                    cursor.execute('insert tyc_log_nofound values ("%s","%s","%s")' % (
+                        keyword, str(datetime.datetime.now()),
+                        str(datetime.datetime.now())[:10]))
+                    conn.commit()
+                    print keyword + u' 跳过----------------------'
 
 def main():
     searched_list = []
     keyword_list = []
     to_search_list = []
     # with open("zhaopin_not_in_jsgsj_basic_info.csv", "r") as csvFile:
-    with open("zhaopin.csv", "r") as csvFile:
+    with open("label.csv", "r") as csvFile:
 
         reader = csv.reader(csvFile)
         for crop_name in reader:
@@ -420,71 +400,89 @@ def main():
             keyword_list.append(item)
     csvFile.close()
 
-    conn = MySQLdb.connect(host="localhost", user="root", passwd="root", db="tianyancha", charset="utf8")
-    cursor = conn.cursor()
+
     global keyword
-    global proxies
+
     cursor.execute('select keyword from tyc_business_info union select keyword from tyc_log_nofound')
     data = cursor.fetchall()
 
     for x in range(len(data)):
         searched_list.append(data[x][0])
 
-
     for item in keyword_list:
         if item not in searched_list:
             to_search_list.append(item)
 
-    for keyword in to_search_list:
-        if keyword.find('company_name') == -1:
-            while True:
-                try:
-                    proxies = get_proxy()
+    for keyword in to_search_list[1:]:
+        print keyword
+        try:
+            do_keyword(keyword)
+        except Exception, e:
+            if str(e).find('HTTPSConnectionPool') >= 0:
+                print u'Max retries exceeded with url'
 
-                    urls_result = do_search_keyword(keyword)
-                    if urls_result:
-                        if urls_result[0] == '-1':
-                            print keyword + ' has no found'
-                            cursor.execute('insert tyc_log_nofound values ("%s","%s","%s")' % (
-                                keyword, str(datetime.datetime.now()),
-                                str(datetime.datetime.now())[:10]))
-                            conn.commit()
-                            print '插入nofound表'
-                            break
-                        for url in urls_result:
-                            print url
-                            while True:
-                                try:
-                                    global cid
-                                    html = get_page(url)
-                                    cid = url.split('/')[-1]
-                                    basic_info(html)
-                                    print company_name
+            else:
+                print u'unknown'+ str(e)
+            do_keyword(keyword)
 
-                                    cursor.execute(get_business_info(html))
-                                    staff_info(html, cursor)
-                                    shareholder_info(html, cursor)
 
-                                    conn.commit()
+            # print keyword
+            # try:
+            #     proxies = get_proxy()
+            #
+            #     urls_result = do_search_keyword(keyword)
+            #     if urls_result:
+            #         if urls_result[0] == '-1':
+            #             print keyword + ' has no found'
+            #             cursor.execute('insert tyc_log_nofound values ("%s","%s","%s")' % (
+            #                 keyword, str(datetime.datetime.now()),
+            #                 str(datetime.datetime.now())[:10]))
+            #             conn.commit()
+            #             print u'插入nofound表'
+            #
+            #         else:
+            #             for url in urls_result:
+            #                 print url
+            #
+            #                 try:
+            #                     global cid
+            #                     html = get_page(url)
+            #                     cid = url.split('/')[-1]
+            #                     basic_info(html)
+            #                     print company_name
+            #
+            #                     cursor.execute(get_business_info(html))
+            #                     staff_info(html, cursor)
+            #                     shareholder_info(html, cursor)
+            #
+            #                     conn.commit()
+            #
+            #                     print u'***************插入完成**************'
+            #
+            #                 except:
+            #                     print u'error 2 with proxy do main again'
+            #                     cursor.execute('insert tyc_log_nofound values ("%s","%s","%s")' % (
+            #                         keyword, str(datetime.datetime.now()),
+            #                         str(datetime.datetime.now())[:10]))
+            #                     conn.commit()
+            #                     print keyword+u' 跳过'
+            #
+            #                     # main()
+            #     else:
+            #
+            #         print u'get urls_result failed '
+            #
+            #
+            # except Exception, e:
+            #     if str(e).find('HTTPSConnectionPool') >= 0:
+            #         print u'Max retries exceeded with url'
+            #     else:
+            #         print u'unknown'+ str(e)
 
-                                    print '插入完成'
-                                    break
-                                except:
-                                    print 'error 2 with proxy do main again'
-                                    continue
-                    else:
 
-                        print 'error 1 with proxy do main again'
-                        continue
-                    break
-                except Exception, e:
-                    if str(e).find('HTTPSConnectionPool') >= 0:
-                        print 'Max retries exceeded with url'
-                        continue
-                    else:
-                        print 'unknown'
-                        continue
 
 
 if __name__ == "__main__":
+    conn = MySQLdb.connect(host="localhost", user="root", passwd="root", db="tianyancha", charset="utf8")
+    cursor = conn.cursor()
     main()
