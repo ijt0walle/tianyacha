@@ -389,13 +389,13 @@ def main():
                     # 存在内容
                     if urls_result[0] == '-1':
                         # 没有内容
-                        print keyword + ' has no found'
+                        print keyword + ' has no found-----------------------'
                         cursor.execute('insert tyc_log_nofound values ("%s","%s","%s")' % (
                             keyword, str(datetime.datetime.now()),
                             str(datetime.datetime.now())[:10]))
                         conn.commit()
                         # 插进nofound表
-                        print u'插入nofound表'
+
                         cursor.close()
                         conn.close()
                         main()
@@ -403,8 +403,8 @@ def main():
                     else:
                         for url in urls_result:
 
-                            count = 0
-                            # 计数器count
+                            # count = 0
+                            # # 计数器count
                             while True:
 
                                 try:
@@ -420,30 +420,46 @@ def main():
                                     staff_info(html, cursor)
                                     shareholder_info(html, cursor)
 
+
                                     print u'******************插入完成******************'
                                     conn.commit()
                                     break
                                 except:
-                                    print u'error 2 with proxy , do main again'
-                                    # 出错后计时器加一
-                                    count += 1
-                                    print count
-                                    if count < 10:
-                                        continue
-                                        # 错十次以内再试一次
-                                    else:
-                                        print u'错十次,插入nofound表,并跳过'
-                                        cursor.execute('insert tyc_log_nofound values ("%s","%s","%s")' % (
-                                            keyword, str(datetime.datetime.now()),
-                                            str(datetime.datetime.now())[:10]))
-                                        print keyword+u'  插入nofound表'
-                                        conn.commit()
-                                        
-                                        cursor.close()
-                                        conn.close()
-                                        
-                                        main()
-                                        # 再次执行main()
+
+                                    print u'错,插入nofound表,并跳过'
+                                    cursor.execute('insert tyc_log_nofound values ("%s","%s","%s")' % (
+                                        keyword, str(datetime.datetime.now()),
+                                        str(datetime.datetime.now())[:10]))
+                                    print keyword + u' 插入nofound表++++++++++++++++++++++++++'
+                                    conn.commit()
+
+                                    cursor.close()
+                                    conn.close()
+
+                                    main()
+                                    # 再次执行main()
+
+                                    #
+                                    # print u'error 2 with proxy , do main again'
+                                    # # 出错后计时器加一
+                                    # count += 1
+                                    # print count
+                                    # if count < 10:
+                                    #     continue
+                                    #     # 错十次以内再试一次
+                                    # else:
+                                    #     print u'错十次,插入nofound表,并跳过'
+                                    #     cursor.execute('insert tyc_log_nofound values ("%s","%s","%s")' % (
+                                    #         keyword, str(datetime.datetime.now()),
+                                    #         str(datetime.datetime.now())[:10]))
+                                    #     print keyword+u'  插入nofound表'
+                                    #     conn.commit()
+                                    #
+                                    #     cursor.close()
+                                    #     conn.close()
+                                    #
+                                    #     main()
+                                    #     # 再次执行main()
                                         
             except Exception, e:
                 if str(e).find('HTTPSConnectionPool') >= 0:
