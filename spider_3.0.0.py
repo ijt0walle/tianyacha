@@ -67,8 +67,7 @@ def execCmd(cmd):
 
 
 def do_search_keyword(keyword):
-    #    北京百度网讯科技有限公司
-    # keyword = raw_input('请输入企业名称、人名、产品名称或其它关键词 ：')
+    proxies2 = get_proxy()
     url = 'https://www.tianyancha.com/search?key=' + urllib.quote(keyword.encode('utf8')) + '&checkFrom=searchBox'
     print url
     headers = {
@@ -78,10 +77,11 @@ def do_search_keyword(keyword):
         'Upgrade-Insecure-Requests': '1',
         'User-Agent': 'Mozilla / 5.0(Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.113 Safari/537.36'
     }
-    html = requests.get(url, proxies=proxies, headers=headers)
+    html = requests.get(url, proxies=proxies2, headers=headers)
     # print html.text
     if html.text.__contains__('https://static.tianyancha.com/wap/images/notFound.png'):
         urls_result = ['-1']
+        print u'nofound.img'
     else:
         urls_result = re.findall('<div class="search_right_item"><div><a href="(.*?)"', html.text, re.S)
     return urls_result
@@ -347,61 +347,77 @@ def get_shareholder_cookie(page_no):
     # return soup2
 
 def do_keyword(keyword):
-    global proxies
-    proxies = get_proxy()
 
-    urls_result = do_search_keyword(keyword)
-    if urls_result:
-        if urls_result[0] == '-1':
-            print keyword + ' has no found'
+    while True:
+
+        global proxies
+
+        try:
+            urls_result = do_search_keyword(keyword)
+        except Exception, e:
+            print u'222:'+str(e)
+            if str(e).find('HTTPSConnectionPool') >= 0:
+                print u'Max retries exceeded with url with do_search_keyword'
+
+            else:
+                print u'unknown error with do_search_keyword'+ str(e)
             cursor.execute('insert tyc_log_nofound values ("%s","%s","%s")' % (
                 keyword, str(datetime.datetime.now()),
                 str(datetime.datetime.now())[:10]))
             conn.commit()
-            print u'插入nofound表'
+            continue
+        if urls_result:
+            if urls_result[0] == '-1':
+                print keyword + ' has no found'
+                cursor.execute('insert tyc_log_nofound values ("%s","%s","%s")' % (
+                    keyword, str(datetime.datetime.now()),
+                    str(datetime.datetime.now())[:10]))
+                conn.commit()
+                print u'插入nofound表'
 
-        else:
-            for url in urls_result:
-                print url
+            else:
+                for url in urls_result:
+                    proxies = get_proxy()
+                    print url
 
-                try:
-                    global cid
-                    html = get_page(url)
-                    cid = url.split('/')[-1]
-                    basic_info(html)
-                    print company_name
+                    try:
+                        global cid
+                        html = get_page(url)
+                        cid = url.split('/')[-1]
 
-                    cursor.execute(get_business_info(html))
-                    staff_info(html, cursor)
-                    shareholder_info(html, cursor)
+                        global company_name
+                        soup = BeautifulSoup(html.text, 'lxml')
+                        company_name = soup.find_all('span', class_="f18 in-block vertival-middle sec-c2")[0].text
+                        print company_name
 
-                    conn.commit()
+                        cursor.execute(get_business_info(html))
+                        staff_info(html, cursor)
+                        shareholder_info(html, cursor)
 
-                    print u'***************插入完成**************'
+                        conn.commit()
 
-                except:
-                    print u'error 2 with proxy do main again'
-                    cursor.execute('insert tyc_log_nofound values ("%s","%s","%s")' % (
-                        keyword, str(datetime.datetime.now()),
-                        str(datetime.datetime.now())[:10]))
-                    conn.commit()
-                    print keyword + u' 跳过----------------------'
+                        print u'***************插入完成**************'
 
-def main():
+                    except Exception,e:
+                        print u'error 2 with info: '+str(e)
+                        cursor.execute('insert tyc_log_nofound values ("%s","%s","%s")' % (
+                            keyword, str(datetime.datetime.now()),
+                            str(datetime.datetime.now())[:10]))
+                        conn.commit()
+                        print keyword + u' 跳过----------------------'
+                        continue
+        break
+def get_need_word():
     searched_list = []
     keyword_list = []
     to_search_list = []
     # with open("zhaopin_not_in_jsgsj_basic_info.csv", "r") as csvFile:
-    with open("label.csv", "r") as csvFile:
-
+    with open("D:\PycharmProjects\\tianyacha\label.csv", "r") as csvFile:
         reader = csv.reader(csvFile)
         for crop_name in reader:
             item = crop_name[0].decode('utf-8')
             keyword_list.append(item)
     csvFile.close()
-
-
-    global keyword
 
     cursor.execute('select keyword from tyc_business_info union select keyword from tyc_log_nofound')
     data = cursor.fetchall()
@@ -413,76 +429,36 @@ def main():
         if item not in searched_list:
             to_search_list.append(item)
 
+    return to_search_list
+
+
+def main(to_search_list):
+    global keyword
+
     for keyword in to_search_list[1:]:
+
         print keyword
-        try:
-            do_keyword(keyword)
-        except Exception, e:
-            if str(e).find('HTTPSConnectionPool') >= 0:
-                print u'Max retries exceeded with url'
 
-            else:
-                print u'unknown'+ str(e)
-            do_keyword(keyword)
+        do_keyword(keyword)
 
+        # try:
+        #     do_keyword(keyword)
+        # except Exception, e:
+        #     if str(e).find('HTTPSConnectionPool') >= 0:
+        #         print u'Max retries exceeded with url'
+        #
+        #     else:
+        #         print u'unknown'+ str(e)
+        #
+        #     do_keyword(keyword)
 
-            # print keyword
-            # try:
-            #     proxies = get_proxy()
-            #
-            #     urls_result = do_search_keyword(keyword)
-            #     if urls_result:
-            #         if urls_result[0] == '-1':
-            #             print keyword + ' has no found'
-            #             cursor.execute('insert tyc_log_nofound values ("%s","%s","%s")' % (
-            #                 keyword, str(datetime.datetime.now()),
-            #                 str(datetime.datetime.now())[:10]))
-            #             conn.commit()
-            #             print u'插入nofound表'
-            #
-            #         else:
-            #             for url in urls_result:
-            #                 print url
-            #
-            #                 try:
-            #                     global cid
-            #                     html = get_page(url)
-            #                     cid = url.split('/')[-1]
-            #                     basic_info(html)
-            #                     print company_name
-            #
-            #                     cursor.execute(get_business_info(html))
-            #                     staff_info(html, cursor)
-            #                     shareholder_info(html, cursor)
-            #
-            #                     conn.commit()
-            #
-            #                     print u'***************插入完成**************'
-            #
-            #                 except:
-            #                     print u'error 2 with proxy do main again'
-            #                     cursor.execute('insert tyc_log_nofound values ("%s","%s","%s")' % (
-            #                         keyword, str(datetime.datetime.now()),
-            #                         str(datetime.datetime.now())[:10]))
-            #                     conn.commit()
-            #                     print keyword+u' 跳过'
-            #
-            #                     # main()
-            #     else:
-            #
-            #         print u'get urls_result failed '
-            #
-            #
-            # except Exception, e:
-            #     if str(e).find('HTTPSConnectionPool') >= 0:
-            #         print u'Max retries exceeded with url'
-            #     else:
-            #         print u'unknown'+ str(e)
 
 
 
 
 if __name__ == "__main__":
-    conn = MySQLdb.connect(host="localhost", user="root", passwd="root", db="tianyancha", charset="utf8")
+    conn = MySQLdb.connect(host="localhost", user="root", passwd="somao1129", db="tianyancha", charset="utf8")
     cursor = conn.cursor()
-    main()
+
+    keywords = get_need_word()
+    main(keywords)
