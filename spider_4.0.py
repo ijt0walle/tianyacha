@@ -42,7 +42,6 @@ phantom.exit();
 """
 
 
-
 def get_proxy():
     proxy_list = list(set(urllib.urlopen(
         'http://60.205.92.109/api.do?name=3E30E00CFEDCD468E6862270F5E728AF&status=1&type=static').read().split('\n')[
@@ -197,11 +196,25 @@ def get_business_info(html):
 
     return (
         'insert into tyc_business_info values("%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s")' % (
-            keyword, company_name, registered_capital, registration_time, company_status,
-            business_registration_number, organization_code, uniform_credit_code,
-            enterprise_type, taxpayer_identification_number, industry, business_term, approval_date,
-            registration_authority, registered_address, english_name, scope_of_business,
-            str(datetime.datetime.now()), str(datetime.datetime.now())[:10])
+            keyword,
+            company_name,
+            registered_capital,
+            registration_time,
+            company_status,
+            business_registration_number,
+            organization_code,
+            uniform_credit_code,
+            enterprise_type,
+            taxpayer_identification_number,
+            industry,
+            business_term,
+            approval_date,
+            registration_authority,
+            registered_address,
+            english_name,
+            scope_of_business,
+            str(datetime.datetime.now()),
+            str(datetime.datetime.now())[:10])
     )
 
 
@@ -310,10 +323,10 @@ def get_shareholder_cookie(page_no):
     utm_code = re.findall("return'([^']*?)'", js_code)[0]
     t = ord(cid[0])
 
-    fw = open("D:\\PycharmProjects\\tianyacha\\rsid.js", "wb+")
+    fw = open("/Users/huaiz/PycharmProjects/tianyacha/rsid.js", "wb+")
     fw.write('var t = "' + str(t) + '",wtf = "' + utm_code + '";' + static_js_code)
     fw.close()
-    phantomResStr = execCmd('phantomjs D:/PycharmProjects/tianyacha/rsid.js')
+    phantomResStr = execCmd('phantomjs /Users/huaiz/PycharmProjects/tianyacha/rsid.js')
     # --print phantomResStr
     # print "phantomResStr: %s" % phantomResStr
     phantomRes = json.loads(phantomResStr)
@@ -347,8 +360,137 @@ def get_shareholder_cookie(page_no):
     # return soup2
 
 
-def do_keyword(keyword):
+def get_invest_info(html,cursor):
+    print u'获取对外投资信息  ' + str(datetime.datetime.now())
 
+    if html.text.__contains__('nav-main-inverst'):
+        soup = BeautifulSoup(html.text,'lxml')
+        num = soup.select('#nav-main-inverstCount > span')[0].text
+        all_page_no = int(num) / 20 +1
+        # 一共有多少页
+        last_page_no = int(num) % 20
+        # 最后一页有多少个
+        for i in range(1,int(all_page_no)+1):
+            soup2 = get_invest_cookie(i)
+            res = soup2.select('tr')
+            for x in range(1, len(res)):
+                source = str(res[x])
+                invested_person = re_findall('title="(.*?)',source)
+                span_part = re_findall('<span class=".*?">(.*?)</span>',source)
+                print span_part[0]  # 被投资企业名称
+                print invested_person[0]  # 被投资法定代表人
+                print span_part[2]  # 注册资本
+                print span_part[3]  # 投资数额
+                print span_part[4]  # 投资占比
+                print span_part[5]  # 注册时间
+                print span_part[6]  # 状态
+                print '--------------------------'
+                cursor.execute('insert tyc_outbound_investment values ("%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s")' %
+                               (keyword,
+                                company_name,
+                                span_part[0].decode('utf-8'),
+                                invested_person[0].decode('utf-8'),
+                                span_part[2].decode('utf-8'),
+                                span_part[3].decode('utf-8'),
+                                span_part[4].decode('utf-8'),
+                                span_part[5].decode('utf-8'),
+                                span_part[6].decode('utf-8'),
+                                str(datetime.datetime.now()),
+                                str(datetime.datetime.now())[:10])
+                               )
+
+
+    else:
+        print '没有对外投资信息'
+        cursor.execute('insert into tyc_outbound_investment values ("%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s")' %
+                       (keyword,
+                        company_name,
+                        'no_invest_info',
+                        'no_invest_info',
+                        'no_invest_info',
+                        'no_invest_info',
+                        'no_invest_info',
+                        'no_invest_info',
+                        'no_invest_info',
+                        str(datetime.datetime.now()),
+                        str(datetime.datetime.now())[:10])
+                       )
+
+
+
+def get_invest_cookie(page_no):
+    while True:
+        try:
+            proxies1= get_proxy()
+            timestamp = int(time.time() * 1000)
+            head1 = {
+                'Content-Type': 'application/json; charset=UTF-8',
+                'Host': 'www.tianyancha.com',
+                'Origin': 'https://www.tianyancha.com',
+                'Referer': 'https://www.tianyancha.com',
+                'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.75 Safari/537.36',
+                'Accept': 'application/json, text/javascript, */*; q=0.01',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+            tongji_url = "https://www.tianyancha.com/tongji/" + cid + ".json?_=" + str(timestamp)
+            print tongji_url
+
+            tongji_page = requests.get(tongji_url, headers=head1, proxies=proxies1, verify=False)
+            print tongji_page.text
+
+            cookie = tongji_page.cookies.get_dict()
+            js_code = "".join([chr(int(code)) for code in tongji_page.json()["data"].split(",")])
+            print cookie
+
+            token = re.findall(r"token=(\w+);", js_code)[0]
+            utm_code = re.findall("return'([^']*?)'", js_code)[0]
+            t = ord(cid[0])
+            print token
+            print utm_code
+
+            fw = open("/Users/huaiz/PycharmProjects/tianyacha/rsid.js", "wb+")
+            fw.write('var t = "' + str(t) + '",wtf = "' + utm_code + '";' + static_js_code)
+            fw.close()
+            phantomResStr = execCmd('phantomjs /Users/huaiz/PycharmProjects/tianyacha/rsid.js')
+            # --print phantomResStr
+            # print "phantomResStr: %s" % phantomResStr
+            phantomRes = json.loads(phantomResStr)
+            ssuid = phantomRes["ssuid"]
+            utm = phantomRes["utm"]
+            print ssuid
+            print utm
+
+            head2 = {
+                'Host': 'www.tianyancha.com',
+                # 'Referer': 'https://www.tianyancha.com/company/22822',
+                'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.75 Safari/537.36',
+                'Accept-Language': 'zh-CN,zh;q=0.8',
+                'Connection': 'keep-alive',
+                'Accept': '*/*',
+                'Accept-Encoding': 'gzip, deflate, sdch, br',
+                'Cookie': 'ssuid=' + ssuid + '; token=' + token + '; _utm=' + utm + '; aliyungf_tc=' + cookie[
+                    "aliyungf_tc"] + '; TYCID=' + cookie["TYCID"] + '; csrfToken=' + cookie["csrfToken"] + '; uccid=' +
+                          cookie["uccid"],
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+
+            url = 'https://www.tianyancha.com/pagination/invest.xhtml?ps=20&pn=' + str(
+                page_no) + '&id=' + cid + '&_=' + str(timestamp - 1)
+            print url
+            resp = requests.get(url, headers=head2, proxies=proxies1, verify=False)
+            # print resp
+            html = resp.text
+            soup2 = BeautifulSoup(html,'lxml')
+            return soup2
+            break
+        except Exception,e:
+            print str(e)
+            if str(e).find('list index out of range')>=0:
+                print u'get_invest_cookie 代理失效 换一个试试'
+            continue
+
+
+def do_keyword(keyword):
     while True:
 
         global proxies
@@ -356,13 +498,13 @@ def do_keyword(keyword):
         try:
             urls_result = do_search_keyword(keyword)
         except Exception, e:
-            print u'222:'+str(e)
+            print u'222:' + str(e)
             if str(e).find('HTTPSConnectionPool') >= 0:
                 print u'Max retries exceeded with url with do_search_keyword'
 
             else:
-                print u'unknown error with do_search_keyword'+ str(e)
-            cursor.execute('insert tyc_log_nofound values ("%s","%s","%s")' % (
+                print u'unknown error with do_search_keyword' + str(e)
+            cursor.execute('insert into tyc_log_nofound values ("%s","%s","%s")' % (
                 keyword, str(datetime.datetime.now()),
                 str(datetime.datetime.now())[:10]))
             conn.commit()
@@ -370,7 +512,7 @@ def do_keyword(keyword):
         if urls_result:
             if urls_result[0] == '-1':
                 print keyword + ' has no found'
-                cursor.execute('insert tyc_log_nofound values ("%s","%s","%s")' % (
+                cursor.execute('insert into tyc_log_nofound values ("%s","%s","%s")' % (
                     keyword, str(datetime.datetime.now()),
                     str(datetime.datetime.now())[:10]))
                 conn.commit()
@@ -392,15 +534,16 @@ def do_keyword(keyword):
                         print company_name
 
                         cursor.execute(get_business_info(html))
-                        staff_info(html, cursor)
-                        shareholder_info(html, cursor)
-
+                        # staff_info(html, cursor)
+                        # shareholder_info(html, cursor)
+                        get_invest_info(html,cursor)
                         conn.commit()
 
                         print u'***************插入完成**************'
+                        break
 
-                    except Exception,e:
-                        print u'error 2 with info: '+str(e)
+                    except Exception, e:
+                        print u'error 2 with info: ' + str(e)
                         cursor.execute('insert tyc_log_nofound values ("%s","%s","%s")' % (
                             keyword, str(datetime.datetime.now()),
                             str(datetime.datetime.now())[:10]))
@@ -415,7 +558,7 @@ def get_need_word():
     keyword_list = []
     to_search_list = []
     # with open("zhaopin_not_in_jsgsj_basic_info.csv", "r") as csvFile:
-    with open("D:\PycharmProjects\\tianyacha\label.csv", "r") as csvFile:
+    with open("/Users/huaiz/PycharmProjects/tianyacha/label2.csv", "r") as csvFile:
         reader = csv.reader(csvFile)
         for crop_name in reader:
             item = crop_name[0].decode('utf-8')
@@ -439,27 +582,19 @@ def main(to_search_list):
     global keyword
 
     for keyword in to_search_list[1:]:
-
         print keyword
 
         do_keyword(keyword)
 
-        # try:
-        #     do_keyword(keyword)
-        # except Exception, e:
-        #     if str(e).find('HTTPSConnectionPool') >= 0:
-        #         print u'Max retries exceeded with url'
-        #
-        #     else:
-        #         print u'unknown'+ str(e)
-        #
-        #     do_keyword(keyword)
 
 
 
 if __name__ == "__main__":
     conn = MySQLdb.connect(host="localhost", user="root", passwd="root", db="tianyancha", charset="utf8")
     cursor = conn.cursor()
+    cursor.execute('truncate table tyc_log_nofound')
+    cursor.execute('truncate table tyc_business_info')
+    cursor.execute('truncate table tyc_outbound_investment')
 
     keywords = get_need_word()
     main(keywords)
