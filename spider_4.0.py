@@ -50,6 +50,9 @@ def detag(html):
     detag = detag.replace('{', ' ')
     detag = detag.replace('}', ' ')
     detag = detag.replace('"', ' ')
+    # detag = detag.replace(' ','')
+    detag = detag.replace('\n', '')
+    detag = detag.replace('\t', '')
 
     return detag
 
@@ -231,7 +234,7 @@ def shareholder_info(html, cursor):
             last_page_no = int(num) % 20
             for i in range(1, int(all_page_no) + 1):
                 if i < int(all_page_no):
-                    soup2 = get_cookie_by_cid('holder',i,20)
+                    soup2 = get_cookie_by_cid('holder', i, 20)
 
                     shareholder = re.findall('title="(.*?)"', soup2)
                     ratio = re.findall('<span class="c-money-y">(.*?)</span>', soup2)
@@ -388,7 +391,7 @@ def product_info(html):
         all_page_no = int(num) / 5 + 1
 
         for i in range(1, int(all_page_no) + 1):
-            print '第 '+str(i)+' 页'
+            print '第 ' + str(i) + ' 页'
             soup2 = get_product_info_cookie(i)
             res = soup2.select('tr')
             for x in range(1, len(res)):
@@ -558,7 +561,16 @@ def website_record(html):
                 record_number = part_one[2]
                 state = part_one[3]
                 unit_character = part_one[4]
-
+                print part_one
+                print part_two
+                print check_time
+                print website_name
+                print homepage
+                print domain
+                print record_number
+                print state
+                print unit_character
+                print '--------------------------'
                 cursor.execute(
                     'insert into tyc_website_record values ("%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s")' %
                     (keyword,
@@ -573,7 +585,6 @@ def website_record(html):
                      str(datetime.datetime.now()),
                      str(datetime.datetime.now())[:10])
                 )
-
 
 
 
@@ -595,7 +606,7 @@ def website_record(html):
         )
 
 
-## 法律诉讼部分  TBD
+## 法律诉讼部分
 def lawsuit(html):
     print u'获取法律诉讼信息  ' + str(datetime.datetime.now())
     if html.text.__contains__('nav-main-lawsuitCount'):
@@ -604,58 +615,60 @@ def lawsuit(html):
         all_page_no = int(num) / 5 + 1
 
         for i in range(1, int(all_page_no) + 1):
-            print u'爬第'+str(i)+u'页'
-            soup2 = get_lawsuit_cookie(i)
-            print soup2
-            # res = soup2.select('tr')
-            #
-            # for x in range(1, len(res)):
-            #     source = str(res[x])
-            #     part_one = re_findall('<td><span class="">(.*?)</span></td>')
-            #
-            #     date = part_one[0]
-            #     Judgment_document_name = re_findall('<td><a href-new-event= .*? href=".*?">(.*?)</a></td>', source)[0]
-            #     Judgment_document_url = re_findall('<td><a href-new-event= .*? href="(.*?)">', source)[0]
-            #     cause = part_one[1]
-            #     identity = re_findall('<td>(.*?)</td>', source)[0]
-            #     docket_number = re_findall('<td><span class="text-dark-color" ng-class="">(.*?)</span></td>', source)[0]
-            #
-            #     print date
-            #     print Judgment_document_name
-            #     print Judgment_document_url
-            #     print cause
-            #     print identity
-            #     print docket_number
-                # cursor.execute(
-                #     'insert into tyc_lawsuit_info values ("%s","%s","%s","%s","%s","%s","%s","%s","%s","%s")' %
-                #     (keyword,
-                #      company_name,
-                #      date,
-                #      Judgment_document_name,
-                #      Judgment_document_url,
-                #      cause,
-                #      identity,
-                #      docket_number,
-                #      str(datetime.datetime.now()),
-                #      str(datetime.datetime.now())[:10])
-                # )
+            print u'爬第' + str(i) + u'页'
+            soup2 = get_cookie_by_name('lawsuit', i, 5)
+            # print soup2
+            res = soup2.select('tr')
+
+            for x in range(1, len(res)):
+                source = str(res[x])
+                print source
+
+                date = re_findall('<span class=".*?">(.*?)</span>', source)[0]
+                Judgment_document_url = re_findall('href="(.*?)" href-new-event', source)[0]
+                Judgment_document_name = re_findall('target="_blank">(.*?)</a>', source)[0]
+                cause = re_findall('<span class=".*?">(.*?)</span>', source)[1]
+                identity = detag(re_findall('<div class="text-dark-color">(.*?)</div>', source)[0])
+                docket_number = re_findall('<span class=".*?">(.*?)</span>', source)[2]
+
+                print date
+                print Judgment_document_name
+                print Judgment_document_url
+                print cause
+                print identity
+                print docket_number
+                cursor.execute(
+                    'insert into tyc_lawsuit_info values ("%s","%s","%s","%s","%s","%s","%s","%s","%s","%s")' %
+                    (keyword,
+                     company_name,
+                     date.decode('utf-8'),
+                     Judgment_document_name.decode('utf-8'),
+                     Judgment_document_url.decode('utf-8'),
+                     cause.decode('utf-8'),
+                     identity.decode('utf-8'),
+                     docket_number.decode('utf-8'),
+                     str(datetime.datetime.now()),
+                     str(datetime.datetime.now())[:10]
+                     )
+                )
     else:
         print '没有 法律诉讼部分'
-        # cursor.execute(
-        #     'insert into tyc_lawsuit_info values ("%s","%s","%s","%s","%s","%s","%s","%s","%s","%s")' %
-        #     (keyword,
-        #      company_name,
-        #      'no_lawsuit_info',
-        #      'no_lawsuit_info',
-        #      'no_lawsuit_info',
-        #      'no_lawsuit_info',
-        #      'no_lawsuit_info',
-        #      'no_lawsuit_info',
-        #      str(datetime.datetime.now()),
-        #      str(datetime.datetime.now())[:10])
-        # )
+        cursor.execute(
+            'insert into tyc_lawsuit_info values ("%s","%s","%s","%s","%s","%s","%s","%s","%s","%s")' %
+            (keyword,
+             company_name,
+             'no_lawsuit_info',
+             'no_lawsuit_info',
+             'no_lawsuit_info',
+             'no_lawsuit_info',
+             'no_lawsuit_info',
+             'no_lawsuit_info',
+             str(datetime.datetime.now()),
+             str(datetime.datetime.now())[:10])
+        )
 
 
+## 法院公告部分
 def court(html):
     print u'获取法院公告信息  ' + str(datetime.datetime.now())
     if html.text.__contains__('nav-main-courtCount'):
@@ -664,16 +677,207 @@ def court(html):
         all_page_no = int(num) / 5 + 1
 
         for i in range(1, int(all_page_no) + 1):
-            soup2 = get_court_cookie(i)
+            soup2 = get_cookie_by_name('court', i, 5)
             res = soup2.select('tr')
             for x in range(1, len(res)):
                 source = str(res[x])
+
+                date = re_findall('"publishdate":"(.*?)"', source)[0]
+                appellant = re_findall('"party1":"(.*?)"', source)[0]
+                defendant = re_findall('"party2":"(.*?)"', source)[0]
+                type = re_findall('"bltntypename":"(.*?)"', source)[0]
+                court = re_findall('"courtcode":"(.*?)"', source)[0]
+                detail = re_findall('"content":"(.*?)"', source)[0]
+
+                print date
+                print appellant
+                print defendant
+                print type
+                print court
+                print detail
+
+                cursor.execute(
+                    'insert into tyc_court_info values ("%s","%s","%s","%s","%s","%s","%s","%s","%s","%s")' %
+                    (keyword,
+                     company_name,
+                     date.decode('utf-8'),
+                     appellant.decode('utf-8'),
+                     defendant.decode('utf-8'),
+                     type.decode('utf-8'),
+                     court.decode('utf-8'),
+                     detail.decode('utf-8'),
+                     str(datetime.datetime.now()),
+                     str(datetime.datetime.now())[:10]
+                     )
+                )
+    else:
+        print '没有 法院公告部分'
+        cursor.execute(
+            'insert into tyc_court_info values ("%s","%s","%s","%s","%s","%s","%s","%s","%s","%s")' %
+            (keyword,
+             company_name,
+             'no_court_info',
+             'no_court_info',
+             'no_court_info',
+             'no_court_info',
+             'no_court_info',
+             'no_court_info',
+             str(datetime.datetime.now()),
+             str(datetime.datetime.now())[:10])
+        )
+        # ==================================
+
+
+## 执行人部分
+def zhixing(html):
+    print u'获取被执行人信息  ' + str(datetime.datetime.now())
+    if html.text.__contains__('nav-main-zhixing'):
+        soup = BeautifulSoup(html.text, 'lxml')
+        num = soup.select('#nav-main-zhixing > span')[0].text
+        all_page_no = int(num) / 5 + 1
+
+        for i in range(1, int(all_page_no) + 1):
+            soup2 = get_cookie_by_cid('zhixing', i, 5)
+            res = soup2.select('tr')
+            for x in range(1, len(res)):
+                source = str(res[x])
+                part = re_findall('<span class=".*?">(.*?)</span>', source)
+                print part[0]
+                print part[1]
+                print part[2]
+                print part[3]
+                cursor.execute(
+                    'insert into tyc_zhixing_info values ("%s","%s","%s","%s","%s","%s","%s","%s")' %
+                    (keyword,
+                     company_name,
+                     part[0].decode('utf-8'),
+                     part[1].decode('utf-8'),
+                     part[2].decode('utf-8'),
+                     part[3].decode('utf-8'),
+                     str(datetime.datetime.now()),
+                     str(datetime.datetime.now())[:10]
+                     )
+                )
+
+    else:
+        print u'没有 被执行人信息部分'
+        cursor.execute(
+            'insert into tyc_zhixing_info values ("%s","%s","%s","%s","%s","%s","%s","%s")' %
+            (keyword,
+             company_name,
+             'no_zhixing_info',
+             'no_zhixing_info',
+             'no_zhixing_info',
+             'no_zhixing_info',
+             str(datetime.datetime.now()),
+             str(datetime.datetime.now())[:10]
+
+             )
+        )
+
+
+## 开庭公告部分
+def announcement(html):
+    print u'获取开庭公告部分  ' + str(datetime.datetime.now())
+    if html.text.__contains__('nav-main-announcementCount'):
+        soup = BeautifulSoup(html.text, 'lxml')
+        num = soup.select('#nav-main-announcementCount > span')[0].text
+        all_page_no = int(num) / 5 + 1
+
+        for i in range(1, int(all_page_no) + 1):
+            soup2 = get_cookie_by_cid('announcementCount', i, 5)
+            res = soup2.select('tr')
+            for x in range(1, len(res)):
+                source = str(res[x])
+
                 date = re_findall('<td>(.*?)</td>', source)[0]
-                appellant = re_findall('<td><span class=".*?data.party1}">(.*?)</span></td>', source)[0]
-                defendant = re_findall('<td><span class=".*?data.party2}">(.*?)</span></td>', source)[0]
-                type = re_findall('<td><span class=".*?data.bltntypename}">(.*?)</span></td>', source)[0]
-                court = re_findall('<td><span class=".*?data.courtcode}">(.*?)</span></td>', source)[0]
-                detail = re_findall('<td><script type="text/html">(.*?)</script>')[0]
+                type = re_findall('<span class="text-dark-color">(.*?)</span>', source)[0]
+                appellant = re_findall('"name":"(.*?)",', source)[0]
+                defendant = re_findall('"name":"(.*?)",', source)[1]
+                case_no = re_findall('"caseNo":"\t(.*?)",', source)[0]
+
+                print date
+                print type
+                print appellant
+                print defendant
+                print case_no
+
+                cursor.execute(
+                    'insert into tyc_announcement_info values ("%s","%s","%s","%s","%s","%s","%s","%s","%s")' %
+                    (keyword,
+                     company_name,
+                     date.decode('utf-8'),
+                     type.decode('utf-8'),
+                     appellant.decode('utf-8'),
+                     defendant.decode('utf-8'),
+                     case_no.decode('utf-8'),
+                     str(datetime.datetime.now()),
+                     str(datetime.datetime.now())[:10])
+                )
+    else:
+        print  u'没有 开庭公告部分'
+        cursor.execute(
+            'insert into tyc_announcement_info values ("%s","%s","%s","%s","%s","%s","%s","%s","%s")' %
+            (keyword,
+             company_name,
+             'no_announcement_info',
+             'no_announcement_info',
+             'no_announcement_info',
+             'no_announcement_info',
+             'no_announcement_info',
+             str(datetime.datetime.now()),
+             str(datetime.datetime.now())[:10])
+        )
+
+
+## 惩罚部分 数据库没做 cookie用的集成
+def punish(html):
+    print u'获取惩罚部分  ' + str(datetime.datetime.now())
+    if html.text.__contains__('nav-main-punishment'):
+        soup = BeautifulSoup(html.text, 'lxml')
+        num = soup.select('#nav-main-punishment > span')[0].text
+        all_page_no = int(num) / 5 + 1
+
+        for i in range(1, int(all_page_no) + 1):
+            soup2 = get_cookie_by_name('punish', i, 5)
+            res = soup2.select('tr')
+            for x in range(1, len(res)):
+                source = str(res[x])
+                print source
+
+                date = re_findall('<span class=".*?">(.*?)</span>', source)[0]
+                document_no = re_findall('<span class=".*?">(.*?)</span>', source)[1]
+                type = re_findall('<span class=".*?">(.*?)</span>', source)[2]
+                decision_organ = re_findall('<div class=".*?">(.*?)</div>', source)[0]
+
+                print date
+                print document_no
+                print type
+                print decision_organ
+                cursor.execute(
+                    'insert into tyc_punish_info values ("%s","%s","%s","%s","%s","%s","%s","%s")' %
+                    (keyword,
+                     company_name,
+                     date.decode('utf-8'),
+                     document_no.decode('utf-8'),
+                     type.decode('utf-8'),
+                     decision_organ.decode('utf-8'),
+                     str(datetime.datetime.now()),
+                     str(datetime.datetime.now())[:10])
+                )
+    else:
+        print u'没有 行政处罚部分'
+        cursor.execute(
+            'insert into tyc_punish_info values ("%s","%s","%s","%s","%s","%s","%s","%s")' %
+            (keyword,
+             company_name,
+             'no_punish_info',
+             'no_punish_info',
+             'no_punish_info',
+             'no_punish_info',
+             str(datetime.datetime.now()),
+             str(datetime.datetime.now())[:10])
+        )
 
 
 # ==================================
@@ -1087,20 +1291,15 @@ def get_lawsuit_cookie(page_no):
             }
             tongji_url = "https://www.tianyancha.com/tongji/" + urllib.quote(
                 company_name.encode('utf8')) + ".json?_=" + str(timestamp)
-            print tongji_url
-            tongji_page = requests.get(tongji_url, headers=head1, proxies=proxies1, verify=False)
-            print tongji_page.text
-            cookie = tongji_page.cookies.get_dict()
-            print cookie
-            js_code = "".join([chr(int(code)) for code in tongji_page.json()["data"].split(",")])
-            print js_code
-            token = re.findall(r"token=(\w+);", js_code)[0]
-            print token
-            utm_code = re.findall("return'([^']*?)'", js_code)[0]
-            print utm_code
-            t = ord(cid[0])
-            print t
 
+            tongji_page = requests.get(tongji_url, headers=head1, proxies=proxies1, verify=False)
+
+            cookie = tongji_page.cookies.get_dict()
+            js_code = "".join([chr(int(code)) for code in tongji_page.json()["data"].split(",")])
+
+            token = re.findall(r"token=(\w+);", js_code)[0]
+            utm_code = re.findall("return'([^']*?)'", js_code)[0]
+            t = ord(company_name[0])
 
             fw = open("/Users/huaiz/PycharmProjects/tianyacha/rsid.js", "wb+")
             fw.write('var t = "' + str(t) + '",wtf = "' + utm_code + '";' + static_js_code)
@@ -1112,51 +1311,103 @@ def get_lawsuit_cookie(page_no):
             ssuid = phantomRes["ssuid"]
             utm = phantomRes["utm"]
 
-            print ssuid
-            print utm
-
             head2 = {
                 'Host': 'www.tianyancha.com',
-                'Referer': 'https://www.tianyancha.com/company/22822',
+                # 'Referer': 'https://www.tianyancha.com/company/22822',
                 'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.75 Safari/537.36',
-                'Accept-Language': 'zh-CN,zh;q=0.8,en;q=0.6',
+                'Accept-Language': 'zh-CN,zh;q=0.8',
                 'Connection': 'keep-alive',
                 'Accept': '*/*',
-                'Accept-Encoding': 'gzip, deflate, br',
+                'Accept-Encoding': 'gzip, deflate, sdch, br',
                 'Cookie': 'ssuid=' + ssuid + '; token=' + token + '; _utm=' + utm + '; aliyungf_tc=' + cookie[
                     "aliyungf_tc"] + '; TYCID=' + cookie["TYCID"] + '; csrfToken=' + cookie["csrfToken"] + '; uccid=' +
                           cookie["uccid"],
                 'X-Requested-With': 'XMLHttpRequest'
             }
 
-            url = 'https://www.tianyancha.com/pagination/recruit.xhtml?ps=5&pn=' + str(
+            url = 'https://www.tianyancha.com/pagination/lawsuit.xhtml?ps=5&pn=' + str(
                 page_no) + '&name=' + urllib.quote(company_name.encode('utf8')) + '&_=' + str(timestamp - 1)
-            print 'url : '+url
-            print head2
+            print url
             resp = requests.get(url, headers=head2, proxies=proxies1, verify=False)
-            print resp
+            # print resp
             html = resp.text
-            print html
             soup2 = BeautifulSoup(html, 'lxml')
-            print soup2
             return soup2
-
             break
-
         except Exception, e:
             print str(e)
             if str(e).find('list index out of range') >= 0:
-                print u'get_lawsuit_cookie 代理失效 换一个试试'
+                print u'get_lawsuit_info_cookie 代理失效 换一个试试'
             continue
 
 
 def get_court_cookie(page_no):
-    pass
+    while True:
+        try:
+            proxies1 = get_proxy()
+            timestamp = int(time.time() * 1000)
+            head1 = {
+                'Content-Type': 'application/json; charset=UTF-8',
+                'Host': 'www.tianyancha.com',
+                'Origin': 'https://www.tianyancha.com',
+                'Referer': 'https://www.tianyancha.com',
+                'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.75 Safari/537.36',
+                'Accept': 'application/json, text/javascript, */*; q=0.01',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+            tongji_url = "https://www.tianyancha.com/tongji/" + urllib.quote(
+                company_name.encode('utf8')) + ".json?_=" + str(timestamp)
+
+            tongji_page = requests.get(tongji_url, headers=head1, proxies=proxies1, verify=False)
+
+            cookie = tongji_page.cookies.get_dict()
+            js_code = "".join([chr(int(code)) for code in tongji_page.json()["data"].split(",")])
+
+            token = re.findall(r"token=(\w+);", js_code)[0]
+            utm_code = re.findall("return'([^']*?)'", js_code)[0]
+            t = ord(company_name[0])
+
+            fw = open("/Users/huaiz/PycharmProjects/tianyacha/rsid.js", "wb+")
+            fw.write('var t = "' + str(t) + '",wtf = "' + utm_code + '";' + static_js_code)
+            fw.close()
+            phantomResStr = execCmd('phantomjs /Users/huaiz/PycharmProjects/tianyacha/rsid.js')
+            # --print phantomResStr
+            # print "phantomResStr: %s" % phantomResStr
+            phantomRes = json.loads(phantomResStr)
+            ssuid = phantomRes["ssuid"]
+            utm = phantomRes["utm"]
+
+            head2 = {
+                'Host': 'www.tianyancha.com',
+                # 'Referer': 'https://www.tianyancha.com/company/22822',
+                'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.75 Safari/537.36',
+                'Accept-Language': 'zh-CN,zh;q=0.8',
+                'Connection': 'keep-alive',
+                'Accept': '*/*',
+                'Accept-Encoding': 'gzip, deflate, sdch, br',
+                'Cookie': 'ssuid=' + ssuid + '; token=' + token + '; _utm=' + utm + '; aliyungf_tc=' + cookie[
+                    "aliyungf_tc"] + '; TYCID=' + cookie["TYCID"] + '; csrfToken=' + cookie["csrfToken"] + '; uccid=' +
+                          cookie["uccid"],
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+
+            url = 'https://www.tianyancha.com/pagination/court.xhtml?ps=5&pn=' + str(
+                page_no) + '&name=' + urllib.quote(company_name.encode('utf8')) + '&_=' + str(timestamp - 1)
+            print url
+            resp = requests.get(url, headers=head2, proxies=proxies1, verify=False)
+            # print resp
+            html = resp.text
+            soup2 = BeautifulSoup(html, 'lxml')
+            return soup2
+            break
+        except Exception, e:
+            print str(e)
+            if str(e).find('list index out of range') >= 0:
+                print u'get_court_info_cookie 代理失效 换一个试试'
+            continue
 
 
-
-
-def get_cookie_by_cid(name,page_no,per_page):
+def get_cookie_by_cid(name, page_no, per_page):
     while True:
         try:
             proxies1 = get_proxy()
@@ -1205,7 +1456,7 @@ def get_cookie_by_cid(name,page_no,per_page):
                 'X-Requested-With': 'XMLHttpRequest'
             }
 
-            url = 'https://www.tianyancha.com/pagination/'+name+'.xhtml?ps='+per_page+'&pn=' + str(
+            url = 'https://www.tianyancha.com/pagination/' + name + '.xhtml?ps=' + str(per_page) + '&pn=' + str(
                 page_no) + '&id=' + cid + '&_=' + str(timestamp - 1)
             resp = requests.get(url, headers=head2, proxies=proxies1, verify=False)
             # print resp
@@ -1216,7 +1467,73 @@ def get_cookie_by_cid(name,page_no,per_page):
         except Exception, e:
             print str(e)
             if str(e).find('list index out of range') >= 0:
-                print u'get_'+name+'_cookie 代理失效 换一个试试'
+                print u'get_' + name.encode('utf-8') + '_cookie 代理失效 换一个试试'
+            continue
+
+
+def get_cookie_by_name(name, page_no, per_page):
+    while True:
+        try:
+            proxies1 = get_proxy()
+            timestamp = int(time.time() * 1000)
+            head1 = {
+                'Content-Type': 'application/json; charset=UTF-8',
+                'Host': 'www.tianyancha.com',
+                'Origin': 'https://www.tianyancha.com',
+                'Referer': 'https://www.tianyancha.com',
+                'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.75 Safari/537.36',
+                'Accept': 'application/json, text/javascript, */*; q=0.01',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+            tongji_url = "https://www.tianyancha.com/tongji/" + urllib.quote(
+                company_name.encode('utf8')) + ".json?_=" + str(timestamp)
+
+            tongji_page = requests.get(tongji_url, headers=head1, proxies=proxies1, verify=False)
+
+            cookie = tongji_page.cookies.get_dict()
+            js_code = "".join([chr(int(code)) for code in tongji_page.json()["data"].split(",")])
+
+            token = re.findall(r"token=(\w+);", js_code)[0]
+            utm_code = re.findall("return'([^']*?)'", js_code)[0]
+            t = ord(company_name[0])
+
+            fw = open("/Users/huaiz/PycharmProjects/tianyacha/rsid.js", "wb+")
+            fw.write('var t = "' + str(t) + '",wtf = "' + utm_code + '";' + static_js_code)
+            fw.close()
+            phantomResStr = execCmd('phantomjs /Users/huaiz/PycharmProjects/tianyacha/rsid.js')
+            # --print phantomResStr
+            # print "phantomResStr: %s" % phantomResStr
+            phantomRes = json.loads(phantomResStr)
+            ssuid = phantomRes["ssuid"]
+            utm = phantomRes["utm"]
+
+            head2 = {
+                'Host': 'www.tianyancha.com',
+                # 'Referer': 'https://www.tianyancha.com/company/22822',
+                'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.75 Safari/537.36',
+                'Accept-Language': 'zh-CN,zh;q=0.8',
+                'Connection': 'keep-alive',
+                'Accept': '*/*',
+                'Accept-Encoding': 'gzip, deflate, sdch, br',
+                'Cookie': 'ssuid=' + ssuid + '; token=' + token + '; _utm=' + utm + '; aliyungf_tc=' + cookie[
+                    "aliyungf_tc"] + '; TYCID=' + cookie["TYCID"] + '; csrfToken=' + cookie["csrfToken"] + '; uccid=' +
+                          cookie["uccid"],
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+
+            url = 'https://www.tianyancha.com/pagination/' + name + '.xhtml?ps=' + str(per_page) + '&pn=' + str(
+                page_no) + '&name=' + urllib.quote(company_name.encode('utf8')) + '&_=' + str(timestamp - 1)
+            print url
+            resp = requests.get(url, headers=head2, proxies=proxies1, verify=False)
+            # print resp
+            html = resp.text
+            soup2 = BeautifulSoup(html, 'lxml')
+            return soup2
+            break
+        except Exception, e:
+            print str(e)
+            if str(e).find('list index out of range') >= 0:
+                print 'get_' + name.encode('utf-8') + '_cookie 代理失效 换一个试试'
             continue
 
 
@@ -1271,40 +1588,43 @@ def do_keyword(keyword):
                     proxies = get_proxy()
                     print url
 
-                    try:
-                        global cid
-                        html = get_page(url)
-                        cid = url.split('/')[-1]
+                    # try:
+                    global cid
+                    html = get_page(url)
+                    cid = url.split('/')[-1]
 
-                        global company_name
-                        soup = BeautifulSoup(html.text, 'lxml')
-                        company_name = soup.find_all('span', class_="f18 in-block vertival-middle sec-c2")[0].text
-                        print company_name
-                        print urllib.quote(company_name.encode('utf8'))
-                        # cursor.execute(business_info(html))
-                        # staff_info(html, cursor)
-                        # shareholder_info(html, cursor)
-                        # invest_info(html, cursor)
-                        # change_info(html)
-                        # product_info(html)
-                        # wechat_info(html)
-                        # website_record(html)
-                        lawsuit(html)
+                    global company_name
+                    soup = BeautifulSoup(html.text, 'lxml')
+                    company_name = soup.find_all('span', class_="f18 in-block vertival-middle sec-c2")[0].text
+                    print company_name
+                    print urllib.quote(company_name.encode('utf8'))
+                    # cursor.execute(business_info(html))
+                    # staff_info(html, cursor)
+                    # shareholder_info(html, cursor)
+                    # invest_info(html, cursor)
+                    # change_info(html)
+                    # product_info(html)
+                    # wechat_info(html)
+                    # website_record(html)
+                    # lawsuit(html)
+                    # court(html)
+                    # zhixing(html)
+                    punish(html)
 
-                        conn.commit()
+                    conn.commit()
 
-                        print u'***************插入完成**************'
-                        break
-
-                    except Exception, e:
-
-                        print u'error 2 with info: ' + str(e)
-                        cursor.execute('insert tyc_log_nofound values ("%s","%s","%s")' % (
-                            keyword, str(datetime.datetime.now()),
-                            str(datetime.datetime.now())[:10]))
-                        conn.commit()
-                        print keyword + u' 跳过----------------------'
-                        continue
+                    print u'***************插入完成**************'
+                    break
+                    #
+                    # except Exception, e:
+                    #
+                    #     print u'error 2 with info: ' + str(e)
+                    #     cursor.execute('insert tyc_log_nofound values ("%s","%s","%s")' % (
+                    #         keyword, str(datetime.datetime.now()),
+                    #         str(datetime.datetime.now())[:10]))
+                    #     conn.commit()
+                    #     print keyword + u' 跳过----------------------'
+                    #     continue
         break
 
 
@@ -1330,7 +1650,6 @@ def do_search_keyword(keyword):
             else:
                 urls_result = re.findall('<div class="search_right_item"><div><a href="(.*?)"', html.text, re.S)
             return urls_result
-            print 'got it'
             break
         except Exception, e:
             print str(e)
@@ -1376,9 +1695,14 @@ if __name__ == "__main__":
     cursor = conn.cursor()
     cursor.execute('truncate table tyc_log_nofound')
     cursor.execute('truncate table tyc_business_info')
+    cursor.execute('truncate table tyc_lawsuit_info')
+    cursor.execute('truncate table tyc_shareholder_info')
+    cursor.execute('truncate table tyc_staff_info')
+    cursor.execute('truncate table tyc_website_record')
     cursor.execute('truncate table tyc_outbound_investment')
     cursor.execute('truncate table tyc_change_record')
     cursor.execute('truncate table tyc_product_info')
     cursor.execute('truncate table tyc_wechat_info')
+    print '清表 tyc_log_nofound,tyc_business_info,tyc_outbound_investment,tyc_change_record,tyc_product_info,tyc_wechat_info'
     keywords = get_need_word()
     main(keywords)

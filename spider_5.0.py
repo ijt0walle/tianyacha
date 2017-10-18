@@ -934,10 +934,10 @@ def do_keyword(keyword):
                         # shareholder_info(html, cursor)
                         # invest_info(html, cursor)
                         # change_info(html)
-                        # product_info(html)
+                        product_info(html)
                         # wechat_info(html)
                         # website_record(html)
-                        lawsuit(html)
+                        # lawsuit(html)
 
                         conn.commit()
 
