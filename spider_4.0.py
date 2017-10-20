@@ -46,12 +46,12 @@ phantom.exit();
 # 清洗数据(去除文本中的<em><br/>
 def detag(html):
     detag = re.subn('<[^>]*>', ' ', html)[0]
-    detag = detag.replace('\\u\w{4}', ' ')
-    detag = detag.replace('{', ' ')
-    detag = detag.replace('}', ' ')
-    detag = detag.replace('"', ' ')
-    # detag = detag.replace(' ','')
-    detag = detag.replace('\n', '')
+    detag = re.subn('\\\\u\w{4}', ' ', detag)[0]
+    detag = detag.replace('{', '')
+    detag = detag.replace('}', '')
+    detag = detag.replace('"', '')
+    detag = detag.replace(' ','')
+    detag = detag.replace('\n', '.')
     detag = detag.replace('\t', '')
 
     return detag
@@ -275,7 +275,7 @@ def shareholder_info(html, cursor):
 
 
 ### 对外投资信息
-def invest_info(html, cursor):
+def out_invest_info(html, cursor):
     print u'获取对外投资信息  ' + str(datetime.datetime.now())
 
     if html.text.__contains__('nav-main-inverst'):
@@ -286,7 +286,7 @@ def invest_info(html, cursor):
         # last_page_no = int(num) % 20
         # 最后一页有多少个
         for i in range(1, int(all_page_no) + 1):
-            soup2 = get_invest_cookie(i)
+            soup2 = get_cookie_by_cid('invest',i,20)
             res = soup2.select('tr')
             for x in range(1, len(res)):
                 source = str(res[x])
@@ -343,7 +343,7 @@ def change_info(html):
         all_page_no = int(num) / 5 + 1
 
         for i in range(1, int(all_page_no) + 1):
-            soup2 = get_change_cookie(i)
+            soup2 = get_cookie_by_cid('changeinfo',i,5)
             res = soup2.select('tr')
             for x in range(1, len(res)):
                 source = str(res[x])
@@ -392,7 +392,7 @@ def product_info(html):
 
         for i in range(1, int(all_page_no) + 1):
             print '第 ' + str(i) + ' 页'
-            soup2 = get_product_info_cookie(i)
+            soup2 = get_cookie_by_cid('product',i,5)
             res = soup2.select('tr')
             for x in range(1, len(res)):
                 source = str(res[x])
@@ -446,7 +446,7 @@ def wechat_info(html):
         all_page_no = int(num) / 10 + 1
         last_page_no = int(num) % 10
         for i in range(1, int(all_page_no) + 1):
-            soup2 = get_wechat_cookie(i)
+            soup2 = get_cookie_by_cid('wechat',i,10)
             if i < int(all_page_no):
 
                 for n in range(1, 11):
@@ -548,7 +548,7 @@ def website_record(html):
         all_page_no = int(num) / 5 + 1
 
         for i in range(1, int(all_page_no) + 1):
-            soup2 = get_website_record_cookie(i)
+            soup2 = get_cookie_by_cid('icp',i,5)
             res = soup2.select('tr')
             for x in range(1, len(res)):
                 source = str(res[x])
@@ -830,7 +830,7 @@ def announcement(html):
         )
 
 
-## 惩罚部分 数据库没做 cookie用的集成
+## 惩罚部分
 def punish(html):
     print u'获取惩罚部分  ' + str(datetime.datetime.now())
     if html.text.__contains__('nav-main-punishment'):
@@ -878,6 +878,436 @@ def punish(html):
              str(datetime.datetime.now()),
              str(datetime.datetime.now())[:10])
         )
+
+
+## 招聘部分
+def recruit(html):
+    print u'获取招聘部分  ' + str(datetime.datetime.now())
+    if html.text.__contains__('nav-main-recruitCount'):
+        soup = BeautifulSoup(html.text, 'lxml')
+        num = soup.select('#nav-main-recruitCount > span')[0].text
+        all_page_no = int(num) / 10 + 1
+
+        for i in range(1, int(all_page_no) + 1):
+            soup2 = get_cookie_by_name('recruit', i, 10)
+            res = soup2.select('tr')
+            for x in range(1, len(res)):
+                source = str(res[x])
+                date = re_findall('<span.*?>(.*?)</span>', source)[0]
+                job = re_findall('<span.*?>(.*?)</span>', source)[1]
+                exper = re_findall('<span.*?>(.*?)</span>', source)[2]
+                num = re_findall('<span.*?>(.*?)</span>', source)[3]
+                location = re_findall('<span.*?>(.*?)</span>', source)[4]
+                salary = re_findall('oriSalary&quot;:&quot;(.*?)&quot;,', source)[0]
+                detail = detag(re_findall('description&quot;:&quot;(.*?)&quot;', source)[0])
+                fromWeb = re_findall('source&quot;:&quot;(.*?)&quot;,', source)[0]
+
+                print date
+                print job
+                print exper
+                print num
+                print location
+                print salary
+                print detail
+                print fromWeb
+                cursor.execute('insert into tyc_recruit_info values ("%s","%s","%s","%s","%s","%s","%s","%s","%s")' %
+                               (keyword,
+                                company_name,
+                                'no_announcement_info',
+                                'no_announcement_info',
+                                'no_announcement_info',
+                                'no_announcement_info',
+                                'no_announcement_info',
+                                str(datetime.datetime.now()),
+                                str(datetime.datetime.now())[:10])
+                               )
+
+
+## 专利部分
+def patent(html):
+    print u'获取专利部分  ' + str(datetime.datetime.now())
+    if html.text.__contains__('nav-main-patentCount'):
+        soup = BeautifulSoup(html.text, 'lxml')
+        num = soup.select('#nav-main-patentCount > span')[0].text
+        all_page_no = int(num) / 5 + 1
+
+        for i in range(1, int(all_page_no) + 1):
+            soup2 = get_cookie_by_cid('patent', i, 5)
+            res = soup2.select('tr')
+            for x in range(1, len(res)):
+                source = str(res[x])
+
+                date = re_findall('<span.*?>(.*?)</span>', source)[0]
+                name = re_findall('<span.*?>(.*?)</span>', source)[1]
+                application_num = re_findall('<span.*?>(.*?)</span>', source)[2]
+                application_for_pubnum = re_findall('<span.*?>(.*?)</span>', source)[3]
+                location = re_findall('address&quot;:&quot;(.*?)&quot;,', source)[0]
+                inventor = re_findall('inventor&quot;:&quot;(.*)&quot;,&quot;agent', source)[0]
+                applicant = re_findall('applicantName&quot;:&quot;(.*?)&quot;', source)[0]
+                agent = re_findall('agent&quot;:&quot;(.*?)&quot;,&quot;', source)[0]
+                agency = re_findall('agency&quot;:&quot;(.*?)&quot;,&quot;', source)[0]
+                detail = re_findall('abstracts&quot;:&quot;(.*?)&quot;,&quot;', source)[0]
+
+                print date
+                print name
+                print application_num
+                print application_for_pubnum
+                print location
+                print inventor
+                print applicant
+                print agent
+                print agency
+                print detail
+                cursor.execute(
+                    'insert into tyc_patent_info values ("%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s" )' %
+                    (keyword,
+                     company_name,
+                     date.decode('utf-8'),
+                     name.decode('utf-8'),
+                     application_num.decode('utf-8'),
+                     application_for_pubnum.decode('utf-8'),
+                     location.decode('utf-8'),
+                     inventor.decode('utf-8'),
+                     applicant.decode('utf-8'),
+                     agent.decode('utf-8'),
+                     agency.decode('utf-8'),
+                     detail.decode('utf-8'),
+                     str(datetime.datetime.now()),
+                     str(datetime.datetime.now())[:10])
+                )
+    else:
+        print u'专利部分无内容'
+        cursor.execute(
+            'insert into tyc_patent_info values ("%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s" )' %
+            (keyword,
+             company_name,
+             'no_patent_info',
+             'no_patent_info',
+             'no_patent_info',
+             'no_patent_info',
+             'no_patent_info',
+             'no_patent_info',
+             'no_patent_info',
+             'no_patent_info',
+             'no_patent_info',
+             'no_patent_info',
+             str(datetime.datetime.now()),
+             str(datetime.datetime.now())[:10])
+        )
+
+
+## 竞品部分
+def jingpin(html):
+    print u'获取竞品部分  ' + str(datetime.datetime.now())
+    if html.text.__contains__('nav-main-companyJingpin'):
+        soup = BeautifulSoup(html.text, 'lxml')
+        num = soup.select('#nav-main-companyJingpin > span')[0].text
+        all_page_no = int(num) / 10 + 1
+
+        for i in range(1, int(all_page_no) + 1):
+            soup2 = get_cookie_by_name('jingpin', i, 10)
+            res = soup2.select('tr')
+            for x in range(1, len(res)):
+                source = str(res[x])
+
+                icon = re_findall('src="(.*?)"', source)[0]
+                name = re_findall('img alt="(.*?)"', source)[0]
+                location = re_findall('span class=".*?">(.*?)</span>', source)[0]
+                current_round = re_findall('span class=".*?">(.*?)</span>', source)[1]
+                industry = re_findall('span class=".*?">(.*?)</span>', source)[2]
+                business = re_findall('span class=".*?">(.*?)</span>', source)[3]
+                create_time = re_findall('span class=".*?">(.*?)</span>', source)[4]
+                valuation = re_findall('span class=".*?">(.*?)</span>', source)[5]
+
+                print icon
+                print name
+                print location
+                print current_round
+                print industry
+                print business
+                print create_time
+                print valuation
+                cursor.execute(
+                    'insert into tyc_jingpin_info values ("%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s" )' %
+                    (keyword,
+                     company_name,
+                     icon.decode('utf-8'),
+                     name.decode('utf-8'),
+                     location.decode('utf-8'),
+                     current_round.decode('utf-8'),
+                     industry.decode('utf-8'),
+                     business.decode('utf-8'),
+                     create_time.decode('utf-8'),
+                     valuation.decode('utf-8'),
+                     str(datetime.datetime.now()),
+                     str(datetime.datetime.now())[:10])
+                )
+    else:
+        print u'竞品部分无内容'
+        cursor.execute(
+            'insert into tyc_jingpin_info values ("%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s" )' %
+            (keyword,
+             company_name,
+             'no_jingpin_info',
+             'no_jingpin_info',
+             'no_jingpin_info',
+             'no_jingpin_info',
+             'no_jingpin_info',
+             'no_jingpin_info',
+             'no_jingpin_info',
+             'no_jingpin_info',
+             str(datetime.datetime.now()),
+             str(datetime.datetime.now())[:10])
+        )
+
+
+## 软件著作权部分 copy他拼错了 以后可能会改回来 爬不到优先检查这里
+def copyR(html):
+    print u'获取软件著作权部分  ' + str(datetime.datetime.now())
+    if html.text.__contains__('nav-main-cpoyRCount'):
+        soup = BeautifulSoup(html.text, 'lxml')
+        num = soup.select('#nav-main-cpoyRCount > span')[0].text
+        all_page_no = int(num) / 5 + 1
+
+        for i in range(1, int(all_page_no) + 1):
+            soup2 = get_cookie_by_cid('copyright', i, 5)
+            res = soup2.select('tr')
+            for x in range(1, len(res)):
+                source = str(res[x])
+
+                obj = re_findall('<span>(.*?)</span>', source)
+                date = obj[0]
+                name = obj[1]
+                brief_name = obj[2]
+                registration_no = obj[3]
+                classification_no = obj[4]
+                version_no = obj[5]
+
+                print date
+                print name
+                print brief_name
+                print registration_no
+                print classification_no
+                print version_no
+                cursor.execute(
+                    'insert into tyc_copyR_info values ("%s","%s","%s","%s","%s","%s","%s","%s","%s","%s" )' %
+                    (keyword,
+                     company_name,
+
+                     date.decode('utf-8'),
+                     name.decode('utf-8'),
+                     brief_name.decode('utf-8'),
+                     registration_no.decode('utf-8'),
+                     classification_no.decode('utf-8'),
+                     version_no.decode('utf-8'),
+
+                     str(datetime.datetime.now()),
+                     str(datetime.datetime.now())[:10])
+                )
+    else:
+        print u'没有软件著作权部分信息'
+    cursor.execute(
+        'insert into tyc_copyR_info values ("%s","%s","%s","%s","%s","%s","%s","%s","%s","%s" )' %
+        (keyword,
+         company_name,
+
+         'no_copyR_info',
+         'no_copyR_info',
+         'no_copyR_info',
+         'no_copyR_info',
+         'no_copyR_info',
+         'no_copyR_info',
+
+         str(datetime.datetime.now()),
+         str(datetime.datetime.now())[:10])
+    )
+
+
+## 作品著作权部分
+def copyrightWorks(html):
+    print u'获取作品著作权部分  ' + str(datetime.datetime.now())
+    if html.text.__contains__('nav-main-copyrightWorks'):
+        soup = BeautifulSoup(html.text, 'lxml')
+        num = soup.select('#nav-main-copyrightWorks > span')[0].text
+        all_page_no = int(num) / 5 + 1
+
+        for i in range(1, int(all_page_no) + 1):
+            soup2 = get_cookie_by_cid('copyrightWorks', i, 5)
+            res = soup2.select('tr')
+            for x in range(1, len(res)):
+                source = str(res[x])
+
+                obj = re_findall('<span>(.*?)</span>', source)
+                name = obj[0]
+                register_no = obj[1]
+                category = obj[2]
+                finish_date = obj[3]
+                register_date = obj[4]
+                publish_date = obj[5]
+
+                print name
+                print register_no
+                print category
+                print finish_date
+                print register_date
+                print publish_date
+                cursor.execute(
+                    'insert into tyc_copyRworks_info values ("%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s" )' %
+                    (keyword,
+                     company_name,
+
+                     name.decode('utf-8'),
+                     register_no.decode('utf-8'),
+                     category.decode('utf-8'),
+                     finish_date.decode('utf-8'),
+                     register_date.decode('utf-8'),
+                     publish_date.decode('utf-8'),
+
+                     str(datetime.datetime.now()),
+                     str(datetime.datetime.now())[:10])
+
+                )
+
+    else:
+        print u'没有作品著作权部分'
+        cursor.execute(
+            'insert into tyc_copyRworks_info values ("%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s" )' %
+            (keyword,
+             company_name,
+
+             'no_copyRworks_info',
+             'no_copyRworks_info',
+             'no_copyRworks_info',
+             'no_copyRworks_info',
+             'no_copyRworks_info',
+             'no_copyRworks_info',
+
+             str(datetime.datetime.now()),
+             str(datetime.datetime.now())[:10])
+
+        )
+
+
+## 获取企业业务部分
+def firmProduct(html):
+    print u'获取企业业务部分  ' + str(datetime.datetime.now())
+    if html.text.__contains__('nav-main-companyProduct'):
+        soup = BeautifulSoup(html.text, 'lxml')
+        num = soup.select('#nav-main-companyProduct > span')[0].text
+        all_page_no = int(num) / 15 + 1
+
+        for i in range(1, int(all_page_no) + 1):
+            soup2 = get_cookie_by_name('firmProduct', i, 15)
+            res = soup2.select('div[class="product-item"]')
+            for x in range(1, len(res)):
+                source = str(res[x])
+                name = re_findall('img alt="(.*?)"', source)[0]
+                img = re_findall('src="(.*?)"', source)[0]
+                category = detag(re_findall('<div class=".*?">(.*?)</div>', source)[2])
+                brief = detag(re_findall('<div class=".*?">(.*?)</div>', source)[3])
+
+                print name
+                print img
+                print category
+                print brief
+                cursor.execute('insert into tyc_companyProduct_info values ("%s","%s","%s","%s","%s","%s","%s","%s")' %
+                               (keyword,
+                                company_name,
+
+                                name.decode('utf-8'),
+                                img.decode('utf-8'),
+                                category.decode('utf-8'),
+                                brief.decode('utf-8'),
+
+                                str(datetime.datetime.now()),
+                                str(datetime.datetime.now())[:10])
+                               )
+
+    else:
+        print u'没有企业业务部分'
+        cursor.execute(
+            'insert into tyc_companyProduct_info values ("%s","%s","%s","%s","%s","%s","%s","%s")' %
+            (keyword,
+             company_name,
+
+             'no_companyProduct_info',
+             'no_companyProduct_info',
+             'no_companyProduct_info',
+             'no_companyProduct_info',
+
+             str(datetime.datetime.now()),
+             str(datetime.datetime.now())[:10])
+        )
+
+
+## 获取投资事件部分
+def investment_info(html):
+    print u'获取投资事件部分  ' + str(datetime.datetime.now())
+    if html.text.__contains__('nav-main-jigouTzanli'):
+        soup = BeautifulSoup(html.text, 'lxml')
+        num = soup.select('#nav-main-jigouTzanli > span')[0].text
+        all_page_no = int(num) / 10 + 1
+
+        for i in range(1, int(all_page_no) + 1):
+            soup2 = get_cookie_by_name('touzi', i, 10)
+            res = soup2.select('tr')
+            for x in range(1, len(res)):
+                source = str(res[x])
+
+                date = re_findall('<span class=".*?">(.*?)</span>', source)[0]
+                round = re_findall('<span class=".*?">(.*?)</span>', source)[1]
+                amount = re_findall('<span class=".*?">(.*?)</span>', source)[2]
+                investor = detag(re_findall('<div>(.*?)<img alt', source)[0])
+                product_name = re_findall('img alt="(.*?)"', source)[0]
+                product_icon = re_findall('src="(.*?)"', source)[0]
+                location = re_findall('<span class=".*?">(.*?)</span>', source)[3]
+                industry = re_findall('<span class=".*?">(.*?)</span>', source)[4]
+                business = re_findall('<span class=".*?">(.*?)</span>', source)[5]
+
+                print date
+                print round
+                print amount
+                print investor
+                print product_name
+                print product_icon
+                print location
+                print industry
+                print business
+                cursor.execute(
+                    'insert into tyc_investment_info values ("%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s")' %
+                    (keyword,
+                     company_name,
+
+                     date.decode('utf-8'),
+                     round.decode('utf-8'),
+                     amount.decode('utf-8'),
+                     investor.decode('utf-8'),
+                     product_name.decode('utf-8'),
+                     product_icon.decode('utf-8'),
+                     location.decode('utf-8'),
+                     industry.decode('utf-8'),
+                     business.decode('utf-8'),
+
+                     str(datetime.datetime.now()),
+                     str(datetime.datetime.now())[:10]))
+    else:
+        print u'没有投资事件部分'
+        cursor.execute(
+            'insert into tyc_investment_info values ("%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s")' %
+            (keyword,
+             company_name,
+             'no_invest_info',
+             'no_invest_info',
+             'no_invest_info',
+             'no_invest_info',
+             'no_invest_info',
+             'no_invest_info',
+             'no_invest_info',
+             'no_invest_info',
+             'no_invest_info',
+
+             str(datetime.datetime.now()),
+             str(datetime.datetime.now())[:10]))
 
 
 # ==================================
@@ -943,468 +1373,468 @@ def get_shareholder_cookie(page_no):
     # quit()
     # soup2 = BeautifulSoup(html, 'lxml')
     # return soup2
-
-
-### 对外投资信息cookie
-def get_invest_cookie(page_no):
-    while True:
-        try:
-            proxies1 = get_proxy()
-            timestamp = int(time.time() * 1000)
-            head1 = {
-                'Content-Type': 'application/json; charset=UTF-8',
-                'Host': 'www.tianyancha.com',
-                'Origin': 'https://www.tianyancha.com',
-                'Referer': 'https://www.tianyancha.com',
-                'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.75 Safari/537.36',
-                'Accept': 'application/json, text/javascript, */*; q=0.01',
-                'X-Requested-With': 'XMLHttpRequest'
-            }
-            tongji_url = "https://www.tianyancha.com/tongji/" + cid + ".json?_=" + str(timestamp)
-
-            tongji_page = requests.get(tongji_url, headers=head1, proxies=proxies1, verify=False)
-
-            cookie = tongji_page.cookies.get_dict()
-            js_code = "".join([chr(int(code)) for code in tongji_page.json()["data"].split(",")])
-
-            token = re.findall(r"token=(\w+);", js_code)[0]
-            utm_code = re.findall("return'([^']*?)'", js_code)[0]
-            t = ord(cid[0])
-
-            fw = open("/Users/huaiz/PycharmProjects/tianyacha/rsid.js", "wb+")
-            fw.write('var t = "' + str(t) + '",wtf = "' + utm_code + '";' + static_js_code)
-            fw.close()
-            phantomResStr = execCmd('phantomjs /Users/huaiz/PycharmProjects/tianyacha/rsid.js')
-            # --print phantomResStr
-            # print "phantomResStr: %s" % phantomResStr
-            phantomRes = json.loads(phantomResStr)
-            ssuid = phantomRes["ssuid"]
-            utm = phantomRes["utm"]
-
-            head2 = {
-                'Host': 'www.tianyancha.com',
-                # 'Referer': 'https://www.tianyancha.com/company/22822',
-                'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.75 Safari/537.36',
-                'Accept-Language': 'zh-CN,zh;q=0.8',
-                'Connection': 'keep-alive',
-                'Accept': '*/*',
-                'Accept-Encoding': 'gzip, deflate, sdch, br',
-                'Cookie': 'ssuid=' + ssuid + '; token=' + token + '; _utm=' + utm + '; aliyungf_tc=' + cookie[
-                    "aliyungf_tc"] + '; TYCID=' + cookie["TYCID"] + '; csrfToken=' + cookie["csrfToken"] + '; uccid=' +
-                          cookie["uccid"],
-                'X-Requested-With': 'XMLHttpRequest'
-            }
-
-            url = 'https://www.tianyancha.com/pagination/invest.xhtml?ps=20&pn=' + str(
-                page_no) + '&id=' + cid + '&_=' + str(timestamp - 1)
-            resp = requests.get(url, headers=head2, proxies=proxies1, verify=False)
-            # print resp
-            html = resp.text
-            soup2 = BeautifulSoup(html, 'lxml')
-            return soup2
-            break
-        except Exception, e:
-            print str(e)
-            if str(e).find('list index out of range') >= 0:
-                print u'get_invest_cookie 代理失效 换一个试试'
-            continue
-
-
-### 变更记录信息cookie
-def get_change_cookie(page_no):
-    while True:
-        try:
-            proxies1 = get_proxy()
-            timestamp = int(time.time() * 1000)
-            head1 = {
-                'Content-Type': 'application/json; charset=UTF-8',
-                'Host': 'www.tianyancha.com',
-                'Origin': 'https://www.tianyancha.com',
-                'Referer': 'https://www.tianyancha.com',
-                'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.75 Safari/537.36',
-                'Accept': 'application/json, text/javascript, */*; q=0.01',
-                'X-Requested-With': 'XMLHttpRequest'
-            }
-            tongji_url = "https://www.tianyancha.com/tongji/" + cid + ".json?_=" + str(timestamp)
-
-            tongji_page = requests.get(tongji_url, headers=head1, proxies=proxies1, verify=False)
-
-            cookie = tongji_page.cookies.get_dict()
-            js_code = "".join([chr(int(code)) for code in tongji_page.json()["data"].split(",")])
-
-            token = re.findall(r"token=(\w+);", js_code)[0]
-            utm_code = re.findall("return'([^']*?)'", js_code)[0]
-            t = ord(cid[0])
-
-            fw = open("/Users/huaiz/PycharmProjects/tianyacha/rsid.js", "wb+")
-            fw.write('var t = "' + str(t) + '",wtf = "' + utm_code + '";' + static_js_code)
-            fw.close()
-            phantomResStr = execCmd('phantomjs /Users/huaiz/PycharmProjects/tianyacha/rsid.js')
-            # --print phantomResStr
-            # print "phantomResStr: %s" % phantomResStr
-            phantomRes = json.loads(phantomResStr)
-            ssuid = phantomRes["ssuid"]
-            utm = phantomRes["utm"]
-
-            head2 = {
-                'Host': 'www.tianyancha.com',
-                # 'Referer': 'https://www.tianyancha.com/company/22822',
-                'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.75 Safari/537.36',
-                'Accept-Language': 'zh-CN,zh;q=0.8',
-                'Connection': 'keep-alive',
-                'Accept': '*/*',
-                'Accept-Encoding': 'gzip, deflate, sdch, br',
-                'Cookie': 'ssuid=' + ssuid + '; token=' + token + '; _utm=' + utm + '; aliyungf_tc=' + cookie[
-                    "aliyungf_tc"] + '; TYCID=' + cookie["TYCID"] + '; csrfToken=' + cookie["csrfToken"] + '; uccid=' +
-                          cookie["uccid"],
-                'X-Requested-With': 'XMLHttpRequest'
-            }
-
-            url = 'https://www.tianyancha.com/pagination/changeinfo.xhtml?ps=5&pn=' + str(
-                page_no) + '&id=' + cid + '&_=' + str(timestamp - 1)
-            print url
-            resp = requests.get(url, headers=head2, proxies=proxies1, verify=False)
-            # print resp
-            html = resp.text
-            soup2 = BeautifulSoup(html, 'lxml')
-            return soup2
-            break
-        except Exception, e:
-            print str(e)
-            if str(e).find('list index out of range') >= 0:
-                print u'get_change_cookie 代理失效 换一个试试'
-            continue
-
-
-### 产品信息cookie
-def get_product_info_cookie(page_no):
-    while True:
-        try:
-            proxies1 = get_proxy()
-            timestamp = int(time.time() * 1000)
-            head1 = {
-                'Content-Type': 'application/json; charset=UTF-8',
-                'Host': 'www.tianyancha.com',
-                'Origin': 'https://www.tianyancha.com',
-                'Referer': 'https://www.tianyancha.com',
-                'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.75 Safari/537.36',
-                'Accept': 'application/json, text/javascript, */*; q=0.01',
-                'X-Requested-With': 'XMLHttpRequest'
-            }
-            tongji_url = "https://www.tianyancha.com/tongji/" + cid + ".json?_=" + str(timestamp)
-
-            tongji_page = requests.get(tongji_url, headers=head1, proxies=proxies1, verify=False)
-
-            cookie = tongji_page.cookies.get_dict()
-            js_code = "".join([chr(int(code)) for code in tongji_page.json()["data"].split(",")])
-
-            token = re.findall(r"token=(\w+);", js_code)[0]
-            utm_code = re.findall("return'([^']*?)'", js_code)[0]
-            t = ord(cid[0])
-
-            fw = open("/Users/huaiz/PycharmProjects/tianyacha/rsid.js", "wb+")
-            fw.write('var t = "' + str(t) + '",wtf = "' + utm_code + '";' + static_js_code)
-            fw.close()
-            phantomResStr = execCmd('phantomjs /Users/huaiz/PycharmProjects/tianyacha/rsid.js')
-            # --print phantomResStr
-            # print "phantomResStr: %s" % phantomResStr
-            phantomRes = json.loads(phantomResStr)
-            ssuid = phantomRes["ssuid"]
-            utm = phantomRes["utm"]
-
-            head2 = {
-                'Host': 'www.tianyancha.com',
-                # 'Referer': 'https://www.tianyancha.com/company/22822',
-                'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.75 Safari/537.36',
-                'Accept-Language': 'zh-CN,zh;q=0.8',
-                'Connection': 'keep-alive',
-                'Accept': '*/*',
-                'Accept-Encoding': 'gzip, deflate, sdch, br',
-                'Cookie': 'ssuid=' + ssuid + '; token=' + token + '; _utm=' + utm + '; aliyungf_tc=' + cookie[
-                    "aliyungf_tc"] + '; TYCID=' + cookie["TYCID"] + '; csrfToken=' + cookie["csrfToken"] + '; uccid=' +
-                          cookie["uccid"],
-                'X-Requested-With': 'XMLHttpRequest'
-            }
-
-            url = 'https://www.tianyancha.com/pagination/product.xhtml?ps=5&pn=' + str(
-                page_no) + '&id=' + cid + '&_=' + str(timestamp - 1)
-            print url
-            resp = requests.get(url, headers=head2, proxies=proxies1, verify=False)
-            # print resp
-            html = resp.text
-            soup2 = BeautifulSoup(html, 'lxml')
-            return soup2
-            break
-        except Exception, e:
-            print str(e)
-            if str(e).find('list index out of range') >= 0:
-                print u'get_product_info_cookie 代理失效 换一个试试'
-            continue
-
-
-### 微信信息cookie
-def get_wechat_cookie(page_no):
-    while True:
-        try:
-            proxies1 = get_proxy()
-            timestamp = int(time.time() * 1000)
-            head1 = {
-                'Content-Type': 'application/json; charset=UTF-8',
-                'Host': 'www.tianyancha.com',
-                'Origin': 'https://www.tianyancha.com',
-                'Referer': 'https://www.tianyancha.com',
-                'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.75 Safari/537.36',
-                'Accept': 'application/json, text/javascript, */*; q=0.01',
-                'X-Requested-With': 'XMLHttpRequest'
-            }
-            tongji_url = "https://www.tianyancha.com/tongji/" + cid + ".json?_=" + str(timestamp)
-
-            tongji_page = requests.get(tongji_url, headers=head1, proxies=proxies1, verify=False)
-
-            cookie = tongji_page.cookies.get_dict()
-            js_code = "".join([chr(int(code)) for code in tongji_page.json()["data"].split(",")])
-
-            token = re.findall(r"token=(\w+);", js_code)[0]
-            utm_code = re.findall("return'([^']*?)'", js_code)[0]
-            t = ord(cid[0])
-
-            fw = open("/Users/huaiz/PycharmProjects/tianyacha/rsid.js", "wb+")
-            fw.write('var t = "' + str(t) + '",wtf = "' + utm_code + '";' + static_js_code)
-            fw.close()
-            phantomResStr = execCmd('phantomjs /Users/huaiz/PycharmProjects/tianyacha/rsid.js')
-            # --print phantomResStr
-            # print "phantomResStr: %s" % phantomResStr
-            phantomRes = json.loads(phantomResStr)
-            ssuid = phantomRes["ssuid"]
-            utm = phantomRes["utm"]
-
-            head2 = {
-                'Host': 'www.tianyancha.com',
-                # 'Referer': 'https://www.tianyancha.com/company/22822',
-                'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.75 Safari/537.36',
-                'Accept-Language': 'zh-CN,zh;q=0.8',
-                'Connection': 'keep-alive',
-                'Accept': '*/*',
-                'Accept-Encoding': 'gzip, deflate, sdch, br',
-                'Cookie': 'ssuid=' + ssuid + '; token=' + token + '; _utm=' + utm + '; aliyungf_tc=' + cookie[
-                    "aliyungf_tc"] + '; TYCID=' + cookie["TYCID"] + '; csrfToken=' + cookie["csrfToken"] + '; uccid=' +
-                          cookie["uccid"],
-                'X-Requested-With': 'XMLHttpRequest'
-            }
-
-            url = 'https://www.tianyancha.com/pagination/wechat.xhtml?ps=10&pn=' + str(
-                page_no) + '&id=' + cid + '&_=' + str(timestamp - 1)
-            print url
-            resp = requests.get(url, headers=head2, proxies=proxies1, verify=False)
-            # print resp
-            html = resp.text
-            soup2 = BeautifulSoup(html, 'lxml')
-            return soup2
-            break
-        except Exception, e:
-            print str(e)
-            if str(e).find('list index out of range') >= 0:
-                print u'get_wechat_cookie 代理失效 换一个试试'
-            continue
-
-
-### 网站备案信息cookie
-def get_website_record_cookie(page_no):
-    while True:
-        try:
-            proxies1 = get_proxy()
-            timestamp = int(time.time() * 1000)
-            head1 = {
-                'Content-Type': 'application/json; charset=UTF-8',
-                'Host': 'www.tianyancha.com',
-                'Origin': 'https://www.tianyancha.com',
-                'Referer': 'https://www.tianyancha.com',
-                'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.75 Safari/537.36',
-                'Accept': 'application/json, text/javascript, */*; q=0.01',
-                'X-Requested-With': 'XMLHttpRequest'
-            }
-            tongji_url = "https://www.tianyancha.com/tongji/" + cid + ".json?_=" + str(timestamp)
-
-            tongji_page = requests.get(tongji_url, headers=head1, proxies=proxies1, verify=False)
-
-            cookie = tongji_page.cookies.get_dict()
-            js_code = "".join([chr(int(code)) for code in tongji_page.json()["data"].split(",")])
-
-            token = re.findall(r"token=(\w+);", js_code)[0]
-            utm_code = re.findall("return'([^']*?)'", js_code)[0]
-            t = ord(cid[0])
-
-            fw = open("/Users/huaiz/PycharmProjects/tianyacha/rsid.js", "wb+")
-            fw.write('var t = "' + str(t) + '",wtf = "' + utm_code + '";' + static_js_code)
-            fw.close()
-            phantomResStr = execCmd('phantomjs /Users/huaiz/PycharmProjects/tianyacha/rsid.js')
-            # --print phantomResStr
-            # print "phantomResStr: %s" % phantomResStr
-            phantomRes = json.loads(phantomResStr)
-            ssuid = phantomRes["ssuid"]
-            utm = phantomRes["utm"]
-
-            head2 = {
-                'Host': 'www.tianyancha.com',
-                # 'Referer': 'https://www.tianyancha.com/company/22822',
-                'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.75 Safari/537.36',
-                'Accept-Language': 'zh-CN,zh;q=0.8',
-                'Connection': 'keep-alive',
-                'Accept': '*/*',
-                'Accept-Encoding': 'gzip, deflate, sdch, br',
-                'Cookie': 'ssuid=' + ssuid + '; token=' + token + '; _utm=' + utm + '; aliyungf_tc=' + cookie[
-                    "aliyungf_tc"] + '; TYCID=' + cookie["TYCID"] + '; csrfToken=' + cookie["csrfToken"] + '; uccid=' +
-                          cookie["uccid"],
-                'X-Requested-With': 'XMLHttpRequest'
-            }
-
-            url = 'https://www.tianyancha.com/pagination/icp.xhtml?ps=5&pn=' + str(
-                page_no) + '&id=' + cid + '&_=' + str(timestamp - 1)
-            print url
-            resp = requests.get(url, headers=head2, proxies=proxies1, verify=False)
-            # print resp
-            html = resp.text
-            soup2 = BeautifulSoup(html, 'lxml')
-            return soup2
-            break
-        except Exception, e:
-            print str(e)
-            if str(e).find('list index out of range') >= 0:
-                print u'get_website_record_cookies 代理失效 换一个试试'
-            continue
-
-
-### 法律诉讼部分cookie
-def get_lawsuit_cookie(page_no):
-    while True:
-        try:
-            proxies1 = get_proxy()
-            timestamp = int(time.time() * 1000)
-            head1 = {
-                'Content-Type': 'application/json; charset=UTF-8',
-                'Host': 'www.tianyancha.com',
-                'Origin': 'https://www.tianyancha.com',
-                'Referer': 'https://www.tianyancha.com',
-                'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.75 Safari/537.36',
-                'Accept': 'application/json, text/javascript, */*; q=0.01',
-                'X-Requested-With': 'XMLHttpRequest'
-            }
-            tongji_url = "https://www.tianyancha.com/tongji/" + urllib.quote(
-                company_name.encode('utf8')) + ".json?_=" + str(timestamp)
-
-            tongji_page = requests.get(tongji_url, headers=head1, proxies=proxies1, verify=False)
-
-            cookie = tongji_page.cookies.get_dict()
-            js_code = "".join([chr(int(code)) for code in tongji_page.json()["data"].split(",")])
-
-            token = re.findall(r"token=(\w+);", js_code)[0]
-            utm_code = re.findall("return'([^']*?)'", js_code)[0]
-            t = ord(company_name[0])
-
-            fw = open("/Users/huaiz/PycharmProjects/tianyacha/rsid.js", "wb+")
-            fw.write('var t = "' + str(t) + '",wtf = "' + utm_code + '";' + static_js_code)
-            fw.close()
-            phantomResStr = execCmd('phantomjs /Users/huaiz/PycharmProjects/tianyacha/rsid.js')
-            # --print phantomResStr
-            # print "phantomResStr: %s" % phantomResStr
-            phantomRes = json.loads(phantomResStr)
-            ssuid = phantomRes["ssuid"]
-            utm = phantomRes["utm"]
-
-            head2 = {
-                'Host': 'www.tianyancha.com',
-                # 'Referer': 'https://www.tianyancha.com/company/22822',
-                'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.75 Safari/537.36',
-                'Accept-Language': 'zh-CN,zh;q=0.8',
-                'Connection': 'keep-alive',
-                'Accept': '*/*',
-                'Accept-Encoding': 'gzip, deflate, sdch, br',
-                'Cookie': 'ssuid=' + ssuid + '; token=' + token + '; _utm=' + utm + '; aliyungf_tc=' + cookie[
-                    "aliyungf_tc"] + '; TYCID=' + cookie["TYCID"] + '; csrfToken=' + cookie["csrfToken"] + '; uccid=' +
-                          cookie["uccid"],
-                'X-Requested-With': 'XMLHttpRequest'
-            }
-
-            url = 'https://www.tianyancha.com/pagination/lawsuit.xhtml?ps=5&pn=' + str(
-                page_no) + '&name=' + urllib.quote(company_name.encode('utf8')) + '&_=' + str(timestamp - 1)
-            print url
-            resp = requests.get(url, headers=head2, proxies=proxies1, verify=False)
-            # print resp
-            html = resp.text
-            soup2 = BeautifulSoup(html, 'lxml')
-            return soup2
-            break
-        except Exception, e:
-            print str(e)
-            if str(e).find('list index out of range') >= 0:
-                print u'get_lawsuit_info_cookie 代理失效 换一个试试'
-            continue
-
-
-def get_court_cookie(page_no):
-    while True:
-        try:
-            proxies1 = get_proxy()
-            timestamp = int(time.time() * 1000)
-            head1 = {
-                'Content-Type': 'application/json; charset=UTF-8',
-                'Host': 'www.tianyancha.com',
-                'Origin': 'https://www.tianyancha.com',
-                'Referer': 'https://www.tianyancha.com',
-                'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.75 Safari/537.36',
-                'Accept': 'application/json, text/javascript, */*; q=0.01',
-                'X-Requested-With': 'XMLHttpRequest'
-            }
-            tongji_url = "https://www.tianyancha.com/tongji/" + urllib.quote(
-                company_name.encode('utf8')) + ".json?_=" + str(timestamp)
-
-            tongji_page = requests.get(tongji_url, headers=head1, proxies=proxies1, verify=False)
-
-            cookie = tongji_page.cookies.get_dict()
-            js_code = "".join([chr(int(code)) for code in tongji_page.json()["data"].split(",")])
-
-            token = re.findall(r"token=(\w+);", js_code)[0]
-            utm_code = re.findall("return'([^']*?)'", js_code)[0]
-            t = ord(company_name[0])
-
-            fw = open("/Users/huaiz/PycharmProjects/tianyacha/rsid.js", "wb+")
-            fw.write('var t = "' + str(t) + '",wtf = "' + utm_code + '";' + static_js_code)
-            fw.close()
-            phantomResStr = execCmd('phantomjs /Users/huaiz/PycharmProjects/tianyacha/rsid.js')
-            # --print phantomResStr
-            # print "phantomResStr: %s" % phantomResStr
-            phantomRes = json.loads(phantomResStr)
-            ssuid = phantomRes["ssuid"]
-            utm = phantomRes["utm"]
-
-            head2 = {
-                'Host': 'www.tianyancha.com',
-                # 'Referer': 'https://www.tianyancha.com/company/22822',
-                'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.75 Safari/537.36',
-                'Accept-Language': 'zh-CN,zh;q=0.8',
-                'Connection': 'keep-alive',
-                'Accept': '*/*',
-                'Accept-Encoding': 'gzip, deflate, sdch, br',
-                'Cookie': 'ssuid=' + ssuid + '; token=' + token + '; _utm=' + utm + '; aliyungf_tc=' + cookie[
-                    "aliyungf_tc"] + '; TYCID=' + cookie["TYCID"] + '; csrfToken=' + cookie["csrfToken"] + '; uccid=' +
-                          cookie["uccid"],
-                'X-Requested-With': 'XMLHttpRequest'
-            }
-
-            url = 'https://www.tianyancha.com/pagination/court.xhtml?ps=5&pn=' + str(
-                page_no) + '&name=' + urllib.quote(company_name.encode('utf8')) + '&_=' + str(timestamp - 1)
-            print url
-            resp = requests.get(url, headers=head2, proxies=proxies1, verify=False)
-            # print resp
-            html = resp.text
-            soup2 = BeautifulSoup(html, 'lxml')
-            return soup2
-            break
-        except Exception, e:
-            print str(e)
-            if str(e).find('list index out of range') >= 0:
-                print u'get_court_info_cookie 代理失效 换一个试试'
-            continue
+#
+#
+# ### 对外投资信息cookie
+# def get_invest_cookie(page_no):
+#     while True:
+#         try:
+#             proxies1 = get_proxy()
+#             timestamp = int(time.time() * 1000)
+#             head1 = {
+#                 'Content-Type': 'application/json; charset=UTF-8',
+#                 'Host': 'www.tianyancha.com',
+#                 'Origin': 'https://www.tianyancha.com',
+#                 'Referer': 'https://www.tianyancha.com',
+#                 'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.75 Safari/537.36',
+#                 'Accept': 'application/json, text/javascript, */*; q=0.01',
+#                 'X-Requested-With': 'XMLHttpRequest'
+#             }
+#             tongji_url = "https://www.tianyancha.com/tongji/" + cid + ".json?_=" + str(timestamp)
+#
+#             tongji_page = requests.get(tongji_url, headers=head1, proxies=proxies1, verify=False)
+#
+#             cookie = tongji_page.cookies.get_dict()
+#             js_code = "".join([chr(int(code)) for code in tongji_page.json()["data"].split(",")])
+#
+#             token = re.findall(r"token=(\w+);", js_code)[0]
+#             utm_code = re.findall("return'([^']*?)'", js_code)[0]
+#             t = ord(cid[0])
+#
+#             fw = open("/Users/huaiz/PycharmProjects/tianyacha/rsid.js", "wb+")
+#             fw.write('var t = "' + str(t) + '",wtf = "' + utm_code + '";' + static_js_code)
+#             fw.close()
+#             phantomResStr = execCmd('phantomjs /Users/huaiz/PycharmProjects/tianyacha/rsid.js')
+#             # --print phantomResStr
+#             # print "phantomResStr: %s" % phantomResStr
+#             phantomRes = json.loads(phantomResStr)
+#             ssuid = phantomRes["ssuid"]
+#             utm = phantomRes["utm"]
+#
+#             head2 = {
+#                 'Host': 'www.tianyancha.com',
+#                 # 'Referer': 'https://www.tianyancha.com/company/22822',
+#                 'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.75 Safari/537.36',
+#                 'Accept-Language': 'zh-CN,zh;q=0.8',
+#                 'Connection': 'keep-alive',
+#                 'Accept': '*/*',
+#                 'Accept-Encoding': 'gzip, deflate, sdch, br',
+#                 'Cookie': 'ssuid=' + ssuid + '; token=' + token + '; _utm=' + utm + '; aliyungf_tc=' + cookie[
+#                     "aliyungf_tc"] + '; TYCID=' + cookie["TYCID"] + '; csrfToken=' + cookie["csrfToken"] + '; uccid=' +
+#                           cookie["uccid"],
+#                 'X-Requested-With': 'XMLHttpRequest'
+#             }
+#
+#             url = 'https://www.tianyancha.com/pagination/invest.xhtml?ps=20&pn=' + str(
+#                 page_no) + '&id=' + cid + '&_=' + str(timestamp - 1)
+#             resp = requests.get(url, headers=head2, proxies=proxies1, verify=False)
+#             # print resp
+#             html = resp.text
+#             soup2 = BeautifulSoup(html, 'lxml')
+#             return soup2
+#             break
+#         except Exception, e:
+#             print str(e)
+#             if str(e).find('list index out of range') >= 0:
+#                 print u'get_invest_cookie 代理失效 换一个试试'
+#             continue
+#
+#
+# ### 变更记录信息cookie
+# def get_change_cookie(page_no):
+#     while True:
+#         try:
+#             proxies1 = get_proxy()
+#             timestamp = int(time.time() * 1000)
+#             head1 = {
+#                 'Content-Type': 'application/json; charset=UTF-8',
+#                 'Host': 'www.tianyancha.com',
+#                 'Origin': 'https://www.tianyancha.com',
+#                 'Referer': 'https://www.tianyancha.com',
+#                 'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.75 Safari/537.36',
+#                 'Accept': 'application/json, text/javascript, */*; q=0.01',
+#                 'X-Requested-With': 'XMLHttpRequest'
+#             }
+#             tongji_url = "https://www.tianyancha.com/tongji/" + cid + ".json?_=" + str(timestamp)
+#
+#             tongji_page = requests.get(tongji_url, headers=head1, proxies=proxies1, verify=False)
+#
+#             cookie = tongji_page.cookies.get_dict()
+#             js_code = "".join([chr(int(code)) for code in tongji_page.json()["data"].split(",")])
+#
+#             token = re.findall(r"token=(\w+);", js_code)[0]
+#             utm_code = re.findall("return'([^']*?)'", js_code)[0]
+#             t = ord(cid[0])
+#
+#             fw = open("/Users/huaiz/PycharmProjects/tianyacha/rsid.js", "wb+")
+#             fw.write('var t = "' + str(t) + '",wtf = "' + utm_code + '";' + static_js_code)
+#             fw.close()
+#             phantomResStr = execCmd('phantomjs /Users/huaiz/PycharmProjects/tianyacha/rsid.js')
+#             # --print phantomResStr
+#             # print "phantomResStr: %s" % phantomResStr
+#             phantomRes = json.loads(phantomResStr)
+#             ssuid = phantomRes["ssuid"]
+#             utm = phantomRes["utm"]
+#
+#             head2 = {
+#                 'Host': 'www.tianyancha.com',
+#                 # 'Referer': 'https://www.tianyancha.com/company/22822',
+#                 'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.75 Safari/537.36',
+#                 'Accept-Language': 'zh-CN,zh;q=0.8',
+#                 'Connection': 'keep-alive',
+#                 'Accept': '*/*',
+#                 'Accept-Encoding': 'gzip, deflate, sdch, br',
+#                 'Cookie': 'ssuid=' + ssuid + '; token=' + token + '; _utm=' + utm + '; aliyungf_tc=' + cookie[
+#                     "aliyungf_tc"] + '; TYCID=' + cookie["TYCID"] + '; csrfToken=' + cookie["csrfToken"] + '; uccid=' +
+#                           cookie["uccid"],
+#                 'X-Requested-With': 'XMLHttpRequest'
+#             }
+#
+#             url = 'https://www.tianyancha.com/pagination/changeinfo.xhtml?ps=5&pn=' + str(
+#                 page_no) + '&id=' + cid + '&_=' + str(timestamp - 1)
+#             print url
+#             resp = requests.get(url, headers=head2, proxies=proxies1, verify=False)
+#             # print resp
+#             html = resp.text
+#             soup2 = BeautifulSoup(html, 'lxml')
+#             return soup2
+#             break
+#         except Exception, e:
+#             print str(e)
+#             if str(e).find('list index out of range') >= 0:
+#                 print u'get_change_cookie 代理失效 换一个试试'
+#             continue
+#
+#
+# ### 产品信息cookie
+# def get_product_info_cookie(page_no):
+#     while True:
+#         try:
+#             proxies1 = get_proxy()
+#             timestamp = int(time.time() * 1000)
+#             head1 = {
+#                 'Content-Type': 'application/json; charset=UTF-8',
+#                 'Host': 'www.tianyancha.com',
+#                 'Origin': 'https://www.tianyancha.com',
+#                 'Referer': 'https://www.tianyancha.com',
+#                 'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.75 Safari/537.36',
+#                 'Accept': 'application/json, text/javascript, */*; q=0.01',
+#                 'X-Requested-With': 'XMLHttpRequest'
+#             }
+#             tongji_url = "https://www.tianyancha.com/tongji/" + cid + ".json?_=" + str(timestamp)
+#
+#             tongji_page = requests.get(tongji_url, headers=head1, proxies=proxies1, verify=False)
+#
+#             cookie = tongji_page.cookies.get_dict()
+#             js_code = "".join([chr(int(code)) for code in tongji_page.json()["data"].split(",")])
+#
+#             token = re.findall(r"token=(\w+);", js_code)[0]
+#             utm_code = re.findall("return'([^']*?)'", js_code)[0]
+#             t = ord(cid[0])
+#
+#             fw = open("/Users/huaiz/PycharmProjects/tianyacha/rsid.js", "wb+")
+#             fw.write('var t = "' + str(t) + '",wtf = "' + utm_code + '";' + static_js_code)
+#             fw.close()
+#             phantomResStr = execCmd('phantomjs /Users/huaiz/PycharmProjects/tianyacha/rsid.js')
+#             # --print phantomResStr
+#             # print "phantomResStr: %s" % phantomResStr
+#             phantomRes = json.loads(phantomResStr)
+#             ssuid = phantomRes["ssuid"]
+#             utm = phantomRes["utm"]
+#
+#             head2 = {
+#                 'Host': 'www.tianyancha.com',
+#                 # 'Referer': 'https://www.tianyancha.com/company/22822',
+#                 'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.75 Safari/537.36',
+#                 'Accept-Language': 'zh-CN,zh;q=0.8',
+#                 'Connection': 'keep-alive',
+#                 'Accept': '*/*',
+#                 'Accept-Encoding': 'gzip, deflate, sdch, br',
+#                 'Cookie': 'ssuid=' + ssuid + '; token=' + token + '; _utm=' + utm + '; aliyungf_tc=' + cookie[
+#                     "aliyungf_tc"] + '; TYCID=' + cookie["TYCID"] + '; csrfToken=' + cookie["csrfToken"] + '; uccid=' +
+#                           cookie["uccid"],
+#                 'X-Requested-With': 'XMLHttpRequest'
+#             }
+#
+#             url = 'https://www.tianyancha.com/pagination/product.xhtml?ps=5&pn=' + str(
+#                 page_no) + '&id=' + cid + '&_=' + str(timestamp - 1)
+#             print url
+#             resp = requests.get(url, headers=head2, proxies=proxies1, verify=False)
+#             # print resp
+#             html = resp.text
+#             soup2 = BeautifulSoup(html, 'lxml')
+#             return soup2
+#             break
+#         except Exception, e:
+#             print str(e)
+#             if str(e).find('list index out of range') >= 0:
+#                 print u'get_product_info_cookie 代理失效 换一个试试'
+#             continue
+#
+#
+# ### 微信信息cookie
+# def get_wechat_cookie(page_no):
+#     while True:
+#         try:
+#             proxies1 = get_proxy()
+#             timestamp = int(time.time() * 1000)
+#             head1 = {
+#                 'Content-Type': 'application/json; charset=UTF-8',
+#                 'Host': 'www.tianyancha.com',
+#                 'Origin': 'https://www.tianyancha.com',
+#                 'Referer': 'https://www.tianyancha.com',
+#                 'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.75 Safari/537.36',
+#                 'Accept': 'application/json, text/javascript, */*; q=0.01',
+#                 'X-Requested-With': 'XMLHttpRequest'
+#             }
+#             tongji_url = "https://www.tianyancha.com/tongji/" + cid + ".json?_=" + str(timestamp)
+#
+#             tongji_page = requests.get(tongji_url, headers=head1, proxies=proxies1, verify=False)
+#
+#             cookie = tongji_page.cookies.get_dict()
+#             js_code = "".join([chr(int(code)) for code in tongji_page.json()["data"].split(",")])
+#
+#             token = re.findall(r"token=(\w+);", js_code)[0]
+#             utm_code = re.findall("return'([^']*?)'", js_code)[0]
+#             t = ord(cid[0])
+#
+#             fw = open("/Users/huaiz/PycharmProjects/tianyacha/rsid.js", "wb+")
+#             fw.write('var t = "' + str(t) + '",wtf = "' + utm_code + '";' + static_js_code)
+#             fw.close()
+#             phantomResStr = execCmd('phantomjs /Users/huaiz/PycharmProjects/tianyacha/rsid.js')
+#             # --print phantomResStr
+#             # print "phantomResStr: %s" % phantomResStr
+#             phantomRes = json.loads(phantomResStr)
+#             ssuid = phantomRes["ssuid"]
+#             utm = phantomRes["utm"]
+#
+#             head2 = {
+#                 'Host': 'www.tianyancha.com',
+#                 # 'Referer': 'https://www.tianyancha.com/company/22822',
+#                 'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.75 Safari/537.36',
+#                 'Accept-Language': 'zh-CN,zh;q=0.8',
+#                 'Connection': 'keep-alive',
+#                 'Accept': '*/*',
+#                 'Accept-Encoding': 'gzip, deflate, sdch, br',
+#                 'Cookie': 'ssuid=' + ssuid + '; token=' + token + '; _utm=' + utm + '; aliyungf_tc=' + cookie[
+#                     "aliyungf_tc"] + '; TYCID=' + cookie["TYCID"] + '; csrfToken=' + cookie["csrfToken"] + '; uccid=' +
+#                           cookie["uccid"],
+#                 'X-Requested-With': 'XMLHttpRequest'
+#             }
+#
+#             url = 'https://www.tianyancha.com/pagination/wechat.xhtml?ps=10&pn=' + str(
+#                 page_no) + '&id=' + cid + '&_=' + str(timestamp - 1)
+#             print url
+#             resp = requests.get(url, headers=head2, proxies=proxies1, verify=False)
+#             # print resp
+#             html = resp.text
+#             soup2 = BeautifulSoup(html, 'lxml')
+#             return soup2
+#             break
+#         except Exception, e:
+#             print str(e)
+#             if str(e).find('list index out of range') >= 0:
+#                 print u'get_wechat_cookie 代理失效 换一个试试'
+#             continue
+#
+#
+# ### 网站备案信息cookie
+# def get_website_record_cookie(page_no):
+#     while True:
+#         try:
+#             proxies1 = get_proxy()
+#             timestamp = int(time.time() * 1000)
+#             head1 = {
+#                 'Content-Type': 'application/json; charset=UTF-8',
+#                 'Host': 'www.tianyancha.com',
+#                 'Origin': 'https://www.tianyancha.com',
+#                 'Referer': 'https://www.tianyancha.com',
+#                 'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.75 Safari/537.36',
+#                 'Accept': 'application/json, text/javascript, */*; q=0.01',
+#                 'X-Requested-With': 'XMLHttpRequest'
+#             }
+#             tongji_url = "https://www.tianyancha.com/tongji/" + cid + ".json?_=" + str(timestamp)
+#
+#             tongji_page = requests.get(tongji_url, headers=head1, proxies=proxies1, verify=False)
+#
+#             cookie = tongji_page.cookies.get_dict()
+#             js_code = "".join([chr(int(code)) for code in tongji_page.json()["data"].split(",")])
+#
+#             token = re.findall(r"token=(\w+);", js_code)[0]
+#             utm_code = re.findall("return'([^']*?)'", js_code)[0]
+#             t = ord(cid[0])
+#
+#             fw = open("/Users/huaiz/PycharmProjects/tianyacha/rsid.js", "wb+")
+#             fw.write('var t = "' + str(t) + '",wtf = "' + utm_code + '";' + static_js_code)
+#             fw.close()
+#             phantomResStr = execCmd('phantomjs /Users/huaiz/PycharmProjects/tianyacha/rsid.js')
+#             # --print phantomResStr
+#             # print "phantomResStr: %s" % phantomResStr
+#             phantomRes = json.loads(phantomResStr)
+#             ssuid = phantomRes["ssuid"]
+#             utm = phantomRes["utm"]
+#
+#             head2 = {
+#                 'Host': 'www.tianyancha.com',
+#                 # 'Referer': 'https://www.tianyancha.com/company/22822',
+#                 'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.75 Safari/537.36',
+#                 'Accept-Language': 'zh-CN,zh;q=0.8',
+#                 'Connection': 'keep-alive',
+#                 'Accept': '*/*',
+#                 'Accept-Encoding': 'gzip, deflate, sdch, br',
+#                 'Cookie': 'ssuid=' + ssuid + '; token=' + token + '; _utm=' + utm + '; aliyungf_tc=' + cookie[
+#                     "aliyungf_tc"] + '; TYCID=' + cookie["TYCID"] + '; csrfToken=' + cookie["csrfToken"] + '; uccid=' +
+#                           cookie["uccid"],
+#                 'X-Requested-With': 'XMLHttpRequest'
+#             }
+#
+#             url = 'https://www.tianyancha.com/pagination/icp.xhtml?ps=5&pn=' + str(
+#                 page_no) + '&id=' + cid + '&_=' + str(timestamp - 1)
+#             print url
+#             resp = requests.get(url, headers=head2, proxies=proxies1, verify=False)
+#             # print resp
+#             html = resp.text
+#             soup2 = BeautifulSoup(html, 'lxml')
+#             return soup2
+#             break
+#         except Exception, e:
+#             print str(e)
+#             if str(e).find('list index out of range') >= 0:
+#                 print u'get_website_record_cookies 代理失效 换一个试试'
+#             continue
+#
+#
+# ### 法律诉讼部分cookie
+# def get_lawsuit_cookie(page_no):
+#     while True:
+#         try:
+#             proxies1 = get_proxy()
+#             timestamp = int(time.time() * 1000)
+#             head1 = {
+#                 'Content-Type': 'application/json; charset=UTF-8',
+#                 'Host': 'www.tianyancha.com',
+#                 'Origin': 'https://www.tianyancha.com',
+#                 'Referer': 'https://www.tianyancha.com',
+#                 'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.75 Safari/537.36',
+#                 'Accept': 'application/json, text/javascript, */*; q=0.01',
+#                 'X-Requested-With': 'XMLHttpRequest'
+#             }
+#             tongji_url = "https://www.tianyancha.com/tongji/" + urllib.quote(
+#                 company_name.encode('utf8')) + ".json?_=" + str(timestamp)
+#
+#             tongji_page = requests.get(tongji_url, headers=head1, proxies=proxies1, verify=False)
+#
+#             cookie = tongji_page.cookies.get_dict()
+#             js_code = "".join([chr(int(code)) for code in tongji_page.json()["data"].split(",")])
+#
+#             token = re.findall(r"token=(\w+);", js_code)[0]
+#             utm_code = re.findall("return'([^']*?)'", js_code)[0]
+#             t = ord(company_name[0])
+#
+#             fw = open("/Users/huaiz/PycharmProjects/tianyacha/rsid.js", "wb+")
+#             fw.write('var t = "' + str(t) + '",wtf = "' + utm_code + '";' + static_js_code)
+#             fw.close()
+#             phantomResStr = execCmd('phantomjs /Users/huaiz/PycharmProjects/tianyacha/rsid.js')
+#             # --print phantomResStr
+#             # print "phantomResStr: %s" % phantomResStr
+#             phantomRes = json.loads(phantomResStr)
+#             ssuid = phantomRes["ssuid"]
+#             utm = phantomRes["utm"]
+#
+#             head2 = {
+#                 'Host': 'www.tianyancha.com',
+#                 # 'Referer': 'https://www.tianyancha.com/company/22822',
+#                 'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.75 Safari/537.36',
+#                 'Accept-Language': 'zh-CN,zh;q=0.8',
+#                 'Connection': 'keep-alive',
+#                 'Accept': '*/*',
+#                 'Accept-Encoding': 'gzip, deflate, sdch, br',
+#                 'Cookie': 'ssuid=' + ssuid + '; token=' + token + '; _utm=' + utm + '; aliyungf_tc=' + cookie[
+#                     "aliyungf_tc"] + '; TYCID=' + cookie["TYCID"] + '; csrfToken=' + cookie["csrfToken"] + '; uccid=' +
+#                           cookie["uccid"],
+#                 'X-Requested-With': 'XMLHttpRequest'
+#             }
+#
+#             url = 'https://www.tianyancha.com/pagination/lawsuit.xhtml?ps=5&pn=' + str(
+#                 page_no) + '&name=' + urllib.quote(company_name.encode('utf8')) + '&_=' + str(timestamp - 1)
+#             print url
+#             resp = requests.get(url, headers=head2, proxies=proxies1, verify=False)
+#             # print resp
+#             html = resp.text
+#             soup2 = BeautifulSoup(html, 'lxml')
+#             return soup2
+#             break
+#         except Exception, e:
+#             print str(e)
+#             if str(e).find('list index out of range') >= 0:
+#                 print u'get_lawsuit_info_cookie 代理失效 换一个试试'
+#             continue
+#
+#
+# def get_court_cookie(page_no):
+#     while True:
+#         try:
+#             proxies1 = get_proxy()
+#             timestamp = int(time.time() * 1000)
+#             head1 = {
+#                 'Content-Type': 'application/json; charset=UTF-8',
+#                 'Host': 'www.tianyancha.com',
+#                 'Origin': 'https://www.tianyancha.com',
+#                 'Referer': 'https://www.tianyancha.com',
+#                 'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.75 Safari/537.36',
+#                 'Accept': 'application/json, text/javascript, */*; q=0.01',
+#                 'X-Requested-With': 'XMLHttpRequest'
+#             }
+#             tongji_url = "https://www.tianyancha.com/tongji/" + urllib.quote(
+#                 company_name.encode('utf8')) + ".json?_=" + str(timestamp)
+#
+#             tongji_page = requests.get(tongji_url, headers=head1, proxies=proxies1, verify=False)
+#
+#             cookie = tongji_page.cookies.get_dict()
+#             js_code = "".join([chr(int(code)) for code in tongji_page.json()["data"].split(",")])
+#
+#             token = re.findall(r"token=(\w+);", js_code)[0]
+#             utm_code = re.findall("return'([^']*?)'", js_code)[0]
+#             t = ord(company_name[0])
+#
+#             fw = open("/Users/huaiz/PycharmProjects/tianyacha/rsid.js", "wb+")
+#             fw.write('var t = "' + str(t) + '",wtf = "' + utm_code + '";' + static_js_code)
+#             fw.close()
+#             phantomResStr = execCmd('phantomjs /Users/huaiz/PycharmProjects/tianyacha/rsid.js')
+#             # --print phantomResStr
+#             # print "phantomResStr: %s" % phantomResStr
+#             phantomRes = json.loads(phantomResStr)
+#             ssuid = phantomRes["ssuid"]
+#             utm = phantomRes["utm"]
+#
+#             head2 = {
+#                 'Host': 'www.tianyancha.com',
+#                 # 'Referer': 'https://www.tianyancha.com/company/22822',
+#                 'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.75 Safari/537.36',
+#                 'Accept-Language': 'zh-CN,zh;q=0.8',
+#                 'Connection': 'keep-alive',
+#                 'Accept': '*/*',
+#                 'Accept-Encoding': 'gzip, deflate, sdch, br',
+#                 'Cookie': 'ssuid=' + ssuid + '; token=' + token + '; _utm=' + utm + '; aliyungf_tc=' + cookie[
+#                     "aliyungf_tc"] + '; TYCID=' + cookie["TYCID"] + '; csrfToken=' + cookie["csrfToken"] + '; uccid=' +
+#                           cookie["uccid"],
+#                 'X-Requested-With': 'XMLHttpRequest'
+#             }
+#
+#             url = 'https://www.tianyancha.com/pagination/court.xhtml?ps=5&pn=' + str(
+#                 page_no) + '&name=' + urllib.quote(company_name.encode('utf8')) + '&_=' + str(timestamp - 1)
+#             print url
+#             resp = requests.get(url, headers=head2, proxies=proxies1, verify=False)
+#             # print resp
+#             html = resp.text
+#             soup2 = BeautifulSoup(html, 'lxml')
+#             return soup2
+#             break
+#         except Exception, e:
+#             print str(e)
+#             if str(e).find('list index out of range') >= 0:
+#                 print u'get_court_info_cookie 代理失效 换一个试试'
+#             continue
 
 
 def get_cookie_by_cid(name, page_no, per_page):
@@ -1467,7 +1897,7 @@ def get_cookie_by_cid(name, page_no, per_page):
         except Exception, e:
             print str(e)
             if str(e).find('list index out of range') >= 0:
-                print u'get_' + name.encode('utf-8') + '_cookie 代理失效 换一个试试'
+                print u'get cookie 代理失效 换一个试试'
             continue
 
 
@@ -1533,7 +1963,7 @@ def get_cookie_by_name(name, page_no, per_page):
         except Exception, e:
             print str(e)
             if str(e).find('list index out of range') >= 0:
-                print 'get_' + name.encode('utf-8') + '_cookie 代理失效 换一个试试'
+                print 'get cookie 代理失效 换一个试试'
             continue
 
 
@@ -1601,7 +2031,7 @@ def do_keyword(keyword):
                     # cursor.execute(business_info(html))
                     # staff_info(html, cursor)
                     # shareholder_info(html, cursor)
-                    # invest_info(html, cursor)
+                    # out_invest_info(html, cursor)
                     # change_info(html)
                     # product_info(html)
                     # wechat_info(html)
@@ -1609,7 +2039,14 @@ def do_keyword(keyword):
                     # lawsuit(html)
                     # court(html)
                     # zhixing(html)
-                    punish(html)
+                    # punish(html)
+                    # recruit(html)
+                    # patent(html)
+                    # jingpin(html)
+                    # copyR(html)
+                    # copyrightWorks(html)
+                    # firmProduct(html)
+                    investment_info(html)
 
                     conn.commit()
 
@@ -1693,14 +2130,15 @@ def main(to_search_list):
 if __name__ == "__main__":
     conn = MySQLdb.connect(host="localhost", user="root", passwd="root", db="tianyancha", charset="utf8")
     cursor = conn.cursor()
+
     cursor.execute('truncate table tyc_log_nofound')
     cursor.execute('truncate table tyc_business_info')
     cursor.execute('truncate table tyc_lawsuit_info')
     cursor.execute('truncate table tyc_shareholder_info')
     cursor.execute('truncate table tyc_staff_info')
-    cursor.execute('truncate table tyc_website_record')
-    cursor.execute('truncate table tyc_outbound_investment')
-    cursor.execute('truncate table tyc_change_record')
+    cursor.execute('truncate table tyc_webrecord_info')
+    cursor.execute('truncate table tyc_out_investment_info')
+    cursor.execute('truncate table tyc_change_record_info')
     cursor.execute('truncate table tyc_product_info')
     cursor.execute('truncate table tyc_wechat_info')
     print '清表 tyc_log_nofound,tyc_business_info,tyc_outbound_investment,tyc_change_record,tyc_product_info,tyc_wechat_info'
