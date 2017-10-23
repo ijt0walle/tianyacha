@@ -50,7 +50,7 @@ def detag(html):
     detag = detag.replace('{', '')
     detag = detag.replace('}', '')
     detag = detag.replace('"', '')
-    detag = detag.replace(' ','')
+    detag = detag.replace(' ', '')
     detag = detag.replace('\n', '.')
     detag = detag.replace('\t', '')
 
@@ -275,7 +275,7 @@ def shareholder_info(html, cursor):
 
 
 ### 对外投资信息
-def out_invest_info(html, cursor):
+def out_invest_info(html):
     print u'获取对外投资信息  ' + str(datetime.datetime.now())
 
     if html.text.__contains__('nav-main-inverst'):
@@ -286,7 +286,7 @@ def out_invest_info(html, cursor):
         # last_page_no = int(num) % 20
         # 最后一页有多少个
         for i in range(1, int(all_page_no) + 1):
-            soup2 = get_cookie_by_cid('invest',i,20)
+            soup2 = get_cookie_by_cid('invest', i, 20)
             res = soup2.select('tr')
             for x in range(1, len(res)):
                 source = str(res[x])
@@ -343,7 +343,7 @@ def change_info(html):
         all_page_no = int(num) / 5 + 1
 
         for i in range(1, int(all_page_no) + 1):
-            soup2 = get_cookie_by_cid('changeinfo',i,5)
+            soup2 = get_cookie_by_cid('changeinfo', i, 5)
             res = soup2.select('tr')
             for x in range(1, len(res)):
                 source = str(res[x])
@@ -392,7 +392,7 @@ def product_info(html):
 
         for i in range(1, int(all_page_no) + 1):
             print '第 ' + str(i) + ' 页'
-            soup2 = get_cookie_by_cid('product',i,5)
+            soup2 = get_cookie_by_cid('product', i, 5)
             res = soup2.select('tr')
             for x in range(1, len(res)):
                 source = str(res[x])
@@ -446,7 +446,7 @@ def wechat_info(html):
         all_page_no = int(num) / 10 + 1
         last_page_no = int(num) % 10
         for i in range(1, int(all_page_no) + 1):
-            soup2 = get_cookie_by_cid('wechat',i,10)
+            soup2 = get_cookie_by_cid('wechat', i, 10)
             if i < int(all_page_no):
 
                 for n in range(1, 11):
@@ -548,7 +548,7 @@ def website_record(html):
         all_page_no = int(num) / 5 + 1
 
         for i in range(1, int(all_page_no) + 1):
-            soup2 = get_cookie_by_cid('icp',i,5)
+            soup2 = get_cookie_by_cid('icp', i, 5)
             res = soup2.select('tr')
             for x in range(1, len(res)):
                 source = str(res[x])
@@ -1310,6 +1310,44 @@ def investment_info(html):
              str(datetime.datetime.now())[:10]))
 
 
+## 获取失信人部分
+def dishonest(html):
+    print u'爬取失信人信息  ' + str(datetime.datetime.now())
+    if html.text.__contains__('nav-main-dishonest'):
+        soup = BeautifulSoup(html.text, 'lxml')
+        num = soup.select('#nav-main-dishonest > span')[0].text
+        for i in range(1, int(num) + 1):
+            date = soup.select(
+                '#web-content > div > div > div.container.company_container > div > div.col-9.company-main.pl0.pr10.company_new_2017 > div > div.pl30.pr30.pt25 > div:nth-of-type(14) > div:nth-of-type(2) > div > table > tbody > tr:nth-of-type(' + str(
+                    i) + ') > td:nth-of-type(1) > span')[0].text
+            case_no = soup.select(
+                '#web-content > div > div > div.container.company_container > div > div.col-9.company-main.pl0.pr10.company_new_2017 > div > div.pl30.pr30.pt25 > div:nth-of-type(14) > div:nth-of-type(2) > div > table > tbody > tr:nth-of-type(' + str(
+                    i) + ') > td:nth-of-type(2) > span')[0].text
+            court = soup.select(
+                '#web-content > div > div > div.container.company_container > div > div.col-9.company-main.pl0.pr10.company_new_2017 > div > div.pl30.pr30.pt25 > div:nth-of-type(14) > div:nth-of-type(2) > div > table > tbody > tr:nth-of-type(' + str(
+                    i) + ') > td:nth-of-type(3) > span')[0].text
+            state = soup.select(
+                '#web-content > div > div > div.container.company_container > div > div.col-9.company-main.pl0.pr10.company_new_2017 > div > div.pl30.pr30.pt25 > div:nth-of-type(14) > div:nth-of-type(2) > div > table > tbody > tr:nth-of-type(' + str(
+                    i) + ') > td:nth-of-type(4) > span')[0].text
+            reference = soup.select(
+                '#web-content > div > div > div.container.company_container > div > div.col-9.company-main.pl0.pr10.company_new_2017 > div > div.pl30.pr30.pt25 > div:nth-of-type(14) > div:nth-of-type(2) > div > table > tbody > tr:nth-of-type(' + str(
+                    i) + ') > td:nth-of-type(5) > span')[0].text
+            print date
+            print case_no
+            print court
+            print state
+            print reference
+            cursor.execute('insert into tyc_dishonest_info values ("%s","%s","%s","%s","%s","%s","%s","%s","%s")' % (
+                keyword, company_name, date, case_no, court, state, reference, str(datetime.datetime.now()),
+                str(datetime.datetime.now())[:10]))
+
+    else:
+        print u'没有失信人信息'
+        cursor.execute('insert into tyc_dishonest_info values ("%s","%s","%s","%s","%s","%s","%s","%s","%s")' % (
+            keyword, company_name, 'no_dishonest_info', 'no_dishonest_info', 'no_dishonest_info', 'no_dishonest_info', 'no_dishonest_info', str(datetime.datetime.now()),
+        str(datetime.datetime.now())[:10]))
+
+
 # ==================================
 # --------各模块对应cookie获取区-------
 # ==================================
@@ -1373,6 +1411,8 @@ def get_shareholder_cookie(page_no):
     # quit()
     # soup2 = BeautifulSoup(html, 'lxml')
     # return soup2
+
+
 #
 #
 # ### 对外投资信息cookie
@@ -1967,9 +2007,9 @@ def get_cookie_by_name(name, page_no, per_page):
             continue
 
 
-# ==================================
-# ------------主逻辑功能区------------
-# ==================================
+# ===================================
+# ------------主逻辑功能区-------------
+# ===================================
 
 
 def get_page(url):
@@ -2018,50 +2058,52 @@ def do_keyword(keyword):
                     proxies = get_proxy()
                     print url
 
-                    # try:
-                    global cid
-                    html = get_page(url)
-                    cid = url.split('/')[-1]
+                    try:
+                        global cid
+                        html = get_page(url)
+                        cid = url.split('/')[-1]
 
-                    global company_name
-                    soup = BeautifulSoup(html.text, 'lxml')
-                    company_name = soup.find_all('span', class_="f18 in-block vertival-middle sec-c2")[0].text
-                    print company_name
-                    print urllib.quote(company_name.encode('utf8'))
-                    # cursor.execute(business_info(html))
-                    # staff_info(html, cursor)
-                    # shareholder_info(html, cursor)
-                    # out_invest_info(html, cursor)
-                    # change_info(html)
-                    # product_info(html)
-                    # wechat_info(html)
-                    # website_record(html)
-                    # lawsuit(html)
-                    # court(html)
-                    # zhixing(html)
-                    # punish(html)
-                    # recruit(html)
-                    # patent(html)
-                    # jingpin(html)
-                    # copyR(html)
-                    # copyrightWorks(html)
-                    # firmProduct(html)
-                    investment_info(html)
+                        global company_name
+                        soup = BeautifulSoup(html.text, 'lxml')
+                        company_name = soup.find_all('span', class_="f18 in-block vertival-middle sec-c2")[0].text
+                        print company_name
+                        print urllib.quote(company_name.encode('utf8'))
+                        # cursor.execute(business_info(html))
+                        # staff_info(html, cursor)
+                        # shareholder_info(html, cursor)
+                        # ==========上面的在跑了=========
+                        # out_invest_info(html)
+                        # change_info(html)
+                        # product_info(html)
+                        # wechat_info(html)
+                        # website_record(html)
+                        # lawsuit(html)
+                        # court(html)
+                        # zhixing(html)
+                        # punish(html)
+                        # recruit(html)
+                        # patent(html)
+                        # jingpin(html)
+                        # copyR(html)
+                        # copyrightWorks(html)
+                        # firmProduct(html)
+                        # investment_info(html)
+                        # dishonest(html)
 
-                    conn.commit()
+                        conn.commit()
 
-                    print u'***************插入完成**************'
-                    break
-                    #
-                    # except Exception, e:
-                    #
-                    #     print u'error 2 with info: ' + str(e)
-                    #     cursor.execute('insert tyc_log_nofound values ("%s","%s","%s")' % (
-                    #         keyword, str(datetime.datetime.now()),
-                    #         str(datetime.datetime.now())[:10]))
-                    #     conn.commit()
-                    #     print keyword + u' 跳过----------------------'
-                    #     continue
+                        print u'***************插入完成**************'
+                        break
+
+                    except Exception, e:
+
+                        print u'error 2 with info: ' + str(e)
+                        cursor.execute('insert tyc_log_nofound values ("%s","%s","%s")' % (
+                            keyword, str(datetime.datetime.now()),
+                            str(datetime.datetime.now())[:10]))
+                        conn.commit()
+                        print keyword + u' 跳过----------------------'
+                        continue
         break
 
 
@@ -2130,17 +2172,19 @@ def main(to_search_list):
 if __name__ == "__main__":
     conn = MySQLdb.connect(host="localhost", user="root", passwd="root", db="tianyancha", charset="utf8")
     cursor = conn.cursor()
+#=========测试时用的清表==========
+    # cursor.execute('truncate table tyc_log_nofound')
+    # cursor.execute('truncate table tyc_business_info')
+    # cursor.execute('truncate table tyc_lawsuit_info')
+    # cursor.execute('truncate table tyc_shareholder_info')
+    # cursor.execute('truncate table tyc_staff_info')
+    # cursor.execute('truncate table tyc_webrecord_info')
+    # cursor.execute('truncate table tyc_out_investment_info')
+    # cursor.execute('truncate table tyc_change_record_info')
+    # cursor.execute('truncate table tyc_product_info')
+    # cursor.execute('truncate table tyc_wechat_info')
+    # print '清表 tyc_log_nofound,tyc_business_info,tyc_outbound_investment,tyc_change_record,tyc_product_info,tyc_wechat_info'
+# =========测试时用的清表==========
 
-    cursor.execute('truncate table tyc_log_nofound')
-    cursor.execute('truncate table tyc_business_info')
-    cursor.execute('truncate table tyc_lawsuit_info')
-    cursor.execute('truncate table tyc_shareholder_info')
-    cursor.execute('truncate table tyc_staff_info')
-    cursor.execute('truncate table tyc_webrecord_info')
-    cursor.execute('truncate table tyc_out_investment_info')
-    cursor.execute('truncate table tyc_change_record_info')
-    cursor.execute('truncate table tyc_product_info')
-    cursor.execute('truncate table tyc_wechat_info')
-    print '清表 tyc_log_nofound,tyc_business_info,tyc_outbound_investment,tyc_change_record,tyc_product_info,tyc_wechat_info'
     keywords = get_need_word()
     main(keywords)
