@@ -43,7 +43,7 @@ phantom.exit();
 """
 
 
-# 清洗数据(去除文本中的<em><br/>
+# 清洗数据
 def detag(html):
     detag = re.subn('<[^>]*>', ' ', html)[0]
     detag = re.subn('\\\\u\w{4}', ' ', detag)[0]
@@ -1344,8 +1344,233 @@ def dishonest(html):
     else:
         print u'没有失信人信息'
         cursor.execute('insert into tyc_dishonest_info values ("%s","%s","%s","%s","%s","%s","%s","%s","%s")' % (
-            keyword, company_name, 'no_dishonest_info', 'no_dishonest_info', 'no_dishonest_info', 'no_dishonest_info', 'no_dishonest_info', str(datetime.datetime.now()),
-        str(datetime.datetime.now())[:10]))
+            keyword, company_name, 'no_dishonest_info', 'no_dishonest_info', 'no_dishonest_info', 'no_dishonest_info',
+            'no_dishonest_info', str(datetime.datetime.now()),
+            str(datetime.datetime.now())[:10]))
+
+
+## 获取年报部分
+def report(html):
+    head = {
+        'Content-Type': 'application/json; charset=UTF-8',
+        'Host': 'www.tianyancha.com',
+        'Origin': 'https://www.tianyancha.com',
+        'Referer': 'https://www.tianyancha.com',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.75 Safari/537.36',
+        'Accept': 'application/json, text/javascript, */*; q=0.01',
+        'X-Requested-With': 'XMLHttpRequest'
+    }
+    print u'爬取年报信息  ' + str(datetime.datetime.now())
+    if html.text.__contains__('nav-main-reportCount'):
+        soup = BeautifulSoup(html.text, 'lxml')
+        num = soup.select('#nav-main-reportCount > span')[0].text
+        for i in range(1, int(num) + 1):
+            href = soup.select(
+                '#web-content > div > div > div.container.company_container > div '
+                '> div.col-9.company-main.pl0.pr10.company_new_2017 > div > '
+                'div.pl30.pr30.pt25 > div:nth-of-type(8) > div.over-hide > div > '
+                'div:nth-of-type(' + str(i) + ') > a')[0]['href']
+            report_url = 'https://www.tianyancha.com' + href
+            # print report_url
+            report_html = requests.get(report_url, headers=head, timeout = 60, proxies=proxies, verify=False)
+            rep_soup = BeautifulSoup(report_html.text, 'lxml')
+            print '------>'
+
+            title = re.findall('<div class="report_all_title">(.*?)</div>', str(rep_soup),re.S)[0]
+            print title
+            id = re_findall('<div>.*?</div></td><td width="34%"><div>(.*?)</div></td>', str(rep_soup))[0]
+            print id
+            name = re_findall('<div>企业名称</div></td><td width="32%"><div>(.*?)</div></td></tr>', str(rep_soup))[0]
+            print name
+            address = re_findall('<div>企业通信地址</div></td><td><div>(.*?)</div></td>', str(rep_soup))[0]
+            print address
+            number = re_findall('<div>企业联系电话</div></td><td><div>(.*?)</div></td>', str(rep_soup))[0]
+            print number
+
+            state = re_findall('<div>企业经营状态<span class=.*?</div></td><td><div>(.*?)</div></td>',str(rep_soup))[0]
+            print state
+
+            staff_num = re_findall('<div>从业人数</div></td><td><div>(.*?)</div>', str(rep_soup))[0]
+            print staff_num
+
+            post_code = re_findall('<div>邮政编码</div></td><td><div>(.*?)</div></td></tr>', str(rep_soup))[0]
+            print post_code
+            email = re_findall('<div>电子邮箱</div></td><td><div>(.*?)</div>', str(rep_soup))[0]
+            print email
+            webshop_or_website = re_findall('<div>是否有网站或网店</div></td><td><div>(.*?)</div></td></tr>', str(rep_soup))[0]
+            print webshop_or_website
+            invest_or_not = re_findall('<div>企业是否有投资信息或购买其他公司股权</div></td><td><div>(.*?)</div></td>', str(rep_soup))[0]
+            print invest_or_not
+
+            cursor.execute('insert into tyc_report_baseinfo values ("%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s")' %
+                               (keyword,
+                                company_name,
+
+                                title.decode('utf-8'),
+                                id.decode('utf-8'),
+                                name.decode('utf-8'),
+                                address.decode('utf-8'),
+                                number.decode('utf-8'),
+                                state.decode('utf-8'),
+                                staff_num.decode('utf-8'),
+                                post_code.decode('utf-8'),
+                                email.decode('utf-8'),
+                                webshop_or_website.decode('utf-8'),
+                                invest_or_not.decode('utf-8'),
+
+
+                                str(datetime.datetime.now()),
+                                str(datetime.datetime.now())[:10]))
+            if report_html.text.__contains__('div class="report_holder"'):
+                res = rep_soup.select('tr[ng-repeat="holder in items.shareholderList track by $index"]')
+                # print res
+                # print len(res)
+                for x in range(len(res)):
+                    source = str(res[x])
+                    print source
+
+                    name = re_findall('target="_blank">(.*?)</a></td>', source)[0]
+                    print name
+                    human_link = re_findall('a href="(.*?)"', source)[0]
+                    print human_link
+                    amount = re_findall('<td><div>(.*?)</div></td>', source)[0]
+                    print amount
+                    time = re_findall('<td><div>(.*?)</div></td>', source)[1]
+                    print time
+                    type = re_findall('<td><div>(.*?)</div></td>', source)[2]
+                    print type
+                    real_amount = re_findall('<td><div>(.*?)</div></td>', source)[3]
+                    print real_amount
+                    real_time = re_findall('<td><div>(.*?)</div></td>', source)[4]
+                    print real_time
+                    real_type = re_findall('<td><div>(.*?)</div></td>', source)[5]
+                    print real_type
+
+                    cursor.execute('insert into tyc_report_holderinfo values ("%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s")' %
+                                   (keyword,
+                                    company_name,
+
+                                    name.decode('utf-8'),
+                                    human_link.decode('utf-8'),
+                                    amount.decode('utf-8'),
+                                    time.decode('utf-8'),
+                                    type.decode('utf-8'),
+                                    real_amount.decode('utf-8'),
+                                    real_time.decode('utf-8'),
+                                    real_type.decode('utf-8'),
+
+                                    str(datetime.datetime.now()),
+                                    str(datetime.datetime.now())[:10]))
+
+            if report_html.text.__contains__('div class="report_property"'):
+                assets = re_findall('<div>资产总额</div></td><td width="25%"><div>(.*?)</div></td>', str(rep_soup))[0]
+
+                print assets
+
+                total_equity = \
+                    re_findall('<div>所有者权益合计.*?</div></td><td width="25%"><div>(.*?)</div></td>', str(rep_soup))[0]
+
+                print total_equity
+
+                total_sale = re_findall('<div>销售总额</div></td><td><div>(.*?)</div></td>', str(rep_soup))[0]
+
+                print total_sale
+
+                total_benifit = re_findall('<div>利润总额</div></td><td><div>(.*?)</div></td>', str(rep_soup))[0]
+
+                print total_benifit
+
+                main_business_income = \
+                    re_findall('<div>营业总收入中主营业务收入</div></td><td><div>(.*?)</div></td>', str(rep_soup))[0]
+
+                print main_business_income
+
+                pure_income = re_findall('<div>净利润</div></td><td><div>(.*?)</div></td>', str(rep_soup))[0]
+
+                print pure_income
+
+                total_tax = re_findall('<div>纳税总额</div></td><td><div>(.*?)</div></td>', str(rep_soup))[0]
+
+                print total_tax
+
+                total_liabilities = re_findall('<div>负债总额</div></td><td><div>(.*?)</div></td>', str(rep_soup))[0]
+
+                print total_liabilities
+
+                cursor.execute('insert into tyc_report_property values ("%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s")' %
+                               (keyword,
+                                company_name,
+
+                                assets.decode('utf-8'),
+                                total_equity.decode('utf-8'),
+                                total_sale.decode('utf-8'),
+                                total_benifit.decode('utf-8'),
+                                main_business_income.decode('utf-8'),
+                                pure_income.decode('utf-8'),
+                                total_tax.decode('utf-8'),
+                                total_liabilities.decode('utf-8'),
+
+                                str(datetime.datetime.now()),
+                                str(datetime.datetime.now())[:10]))
+
+            if report_html.text.__contains__('div class="report_outbound"'):
+                res = rep_soup.select('tr[ng-repeat="outbound in items.outboundInvestmentList track by $index"]')
+                # print res
+                # print len(res)
+                for x in range(len(res)):
+                    source = str(res[x])
+
+                    id = re_findall('<td><div>(.*?)</div></td>', source)[0]
+
+                    link = re_findall('a href="(.*?)"', source)[0]
+
+                    name = re_findall('target="_blank">(.*?)</a>', source)[0]
+
+                    print id
+                    print link
+                    print name
+
+                    cursor.execute(
+                        'insert into tyc_report_outbound values ("%s","%s","%s","%s","%s","%s","%s")' %
+                        (keyword,
+                         company_name,
+
+                         id.decode('utf-8'),
+                         link.decode('utf-8'),
+                         name.decode('utf-8'),
+
+                         str(datetime.datetime.now()),
+                         str(datetime.datetime.now())[:10])
+                        )
+
+            if report_html.text.__contains__('div class="report_website"'):
+                res = rep_soup.select('tr[ng-repeat="web in items.webInfoList track by $index"]')
+                for x in range(len(res)):
+                    source = str(res[x])
+                    # print source
+
+                    type = re_findall('<td><div style="width:134px;">(.*?)</div></td>', source)[0]
+
+                    name = re_findall('<td><div style="width:200px; word-wrap: break-word;">(.*?)</div></td>', source)[0]
+
+                    website = \
+                    re_findall('<td><div style="width:430px; overflow-x:hidden;word-wrap: break-word;">(.*?)</div></td>',
+                               source)[0]
+
+                    print type
+                    print name
+                    print website
+                    cursor.execute('insert into tyc_report_website values ("%s","%s","%s","%s","%s","%s","%s")' %
+                               (keyword,
+                                company_name,
+
+                                type.decode('utf-8'),
+                                name.decode('utf-8'),
+                                website.decode('utf-8'),
+
+                                str(datetime.datetime.now()),
+                                str(datetime.datetime.now())[:10])
+                               )
 
 
 # ==================================
@@ -1367,7 +1592,7 @@ def get_shareholder_cookie(page_no):
     }
     tongji_url = "https://www.tianyancha.com/tongji/" + cid + ".json?_=" + str(timestamp)
 
-    tongji_page = requests.get(tongji_url, headers=head1, proxies=proxies, verify=False)
+    tongji_page = requests.get(tongji_url, headers=head1, proxies=proxies, timeout = 60,verify=False)
 
     cookie = tongji_page.cookies.get_dict()
     js_code = "".join([chr(int(code)) for code in tongji_page.json()["data"].split(",")])
@@ -1404,7 +1629,7 @@ def get_shareholder_cookie(page_no):
         page_no) + '&id=' + cid + '&_=' + str(
         timestamp - 1)
 
-    resp = requests.get(url, headers=head2, proxies=proxies, verify=False)
+    resp = requests.get(url, headers=head2, proxies=proxies,timeout=60, verify=False)
     # print resp
     html = resp.text
     return html
@@ -2021,7 +2246,7 @@ def get_page(url):
         'User-Agent': 'Mozilla / 5.0(Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.113 Safari/537.36'
     }
 
-    html = requests.get(url, proxies=proxies, headers=headers)
+    html = requests.get(url, proxies=proxies,timeout=60, headers=headers)
     return html
 
 
@@ -2068,6 +2293,7 @@ def do_keyword(keyword):
                         company_name = soup.find_all('span', class_="f18 in-block vertival-middle sec-c2")[0].text
                         print company_name
                         print urllib.quote(company_name.encode('utf8'))
+
                         # cursor.execute(business_info(html))
                         # staff_info(html, cursor)
                         # shareholder_info(html, cursor)
@@ -2089,6 +2315,7 @@ def do_keyword(keyword):
                         # firmProduct(html)
                         # investment_info(html)
                         # dishonest(html)
+                        # report(html)
 
                         conn.commit()
 
@@ -2121,7 +2348,7 @@ def do_search_keyword(keyword):
                 'Upgrade-Insecure-Requests': '1',
                 'User-Agent': 'Mozilla / 5.0(Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.113 Safari/537.36'
             }
-            html = requests.get(url, proxies=proxies2, headers=headers)
+            html = requests.get(url, proxies=proxies2, timeout=60, headers=headers)
             # print html.text
             if html.text.__contains__('https://static.tianyancha.com/wap/images/notFound.png'):
                 urls_result = ['-1']
@@ -2172,7 +2399,7 @@ def main(to_search_list):
 if __name__ == "__main__":
     conn = MySQLdb.connect(host="localhost", user="root", passwd="root", db="tianyancha", charset="utf8")
     cursor = conn.cursor()
-#=========测试时用的清表==========
+    # =========测试时用的清表==========
     # cursor.execute('truncate table tyc_log_nofound')
     # cursor.execute('truncate table tyc_business_info')
     # cursor.execute('truncate table tyc_lawsuit_info')
@@ -2183,8 +2410,14 @@ if __name__ == "__main__":
     # cursor.execute('truncate table tyc_change_record_info')
     # cursor.execute('truncate table tyc_product_info')
     # cursor.execute('truncate table tyc_wechat_info')
-    # print '清表 tyc_log_nofound,tyc_business_info,tyc_outbound_investment,tyc_change_record,tyc_product_info,tyc_wechat_info'
-# =========测试时用的清表==========
+    # cursor.execute('truncate table tyc_report_baseinfo')
+    # cursor.execute('truncate table tyc_report_holderinfo')
+    # cursor.execute('truncate table tyc_report_property')
+    # cursor.execute('truncate table tyc_report_website')
+    # cursor.execute('truncate table tyc_report_outbound')
+    #
+    # print '清表 '
+    # =========测试时用的清表==========
 
     keywords = get_need_word()
     main(keywords)
