@@ -83,7 +83,7 @@ def execCmd(cmd):
 
 
 # ==================================
-# ------------各个模块获取------------
+# ------------ 模块获取  ------------
 # ==================================
 
 
@@ -156,28 +156,49 @@ def business_info(html, company_name):
     scope_of_business = soup.select(
         '#_container_baseInfo > div > div.base0910 > table > tbody > tr:nth-of-type(7) > td:nth-of-type(2) > span > span > span.js-full-container')[
         0].text
-    cursor.execute(
-        'insert into tyc_business_info values("%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s")' % (
-            keyword,
-            company_name,
-            registered_capital,
-            registration_time,
-            company_status,
-            business_registration_number,
-            organization_code,
-            uniform_credit_code,
-            enterprise_type,
-            taxpayer_identification_number,
-            industry,
-            business_term,
-            approval_date,
-            registration_authority,
-            registered_address,
-            english_name,
-            scope_of_business,
-            str(datetime.datetime.now()),
-            str(datetime.datetime.now())[:10])
-    )
+
+    return[
+        company_name,
+        registered_capital,
+        registration_time,
+        company_status,
+        business_registration_number,
+        organization_code,
+        uniform_credit_code,
+        enterprise_type,
+        taxpayer_identification_number,
+        industry,
+        business_term,
+        approval_date,
+        registration_authority,
+        registered_address,
+        english_name,
+        scope_of_business,
+        str(datetime.datetime.now()),
+        str(datetime.datetime.now())[:10]]
+
+    # cursor.execute(
+    #     'insert into tyc_business_info values("%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s")' % (
+    #         keyword,
+    #         company_name,
+    #         registered_capital,
+    #         registration_time,
+    #         company_status,
+    #         business_registration_number,
+    #         organization_code,
+    #         uniform_credit_code,
+    #         enterprise_type,
+    #         taxpayer_identification_number,
+    #         industry,
+    #         business_term,
+    #         approval_date,
+    #         registration_authority,
+    #         registered_address,
+    #         english_name,
+    #         scope_of_business,
+    #         str(datetime.datetime.now()),
+    #         str(datetime.datetime.now())[:10])
+    # )
 
 
 # ===================================
@@ -186,10 +207,12 @@ def business_info(html, company_name):
 
 
 def get_need_word():
+    conn = MySQLdb.connect(host="localhost", user="root", passwd="root", db="tianyancha", charset="utf8")
+    cursor = conn.cursor()
     searched_list = []
     keyword_list = []
     to_search_list = []
-    with open("/Users/huaiz/PycharmProjects/tianyacha/label.csv", "r") as csvFile:
+    with open("D:\\PycharmProjects\\tianyacha\\label.csv", "r") as csvFile:
         reader = csv.reader(csvFile)
         for crop_name in reader:
             item = crop_name[0].decode('utf-8')
@@ -198,7 +221,8 @@ def get_need_word():
 
     cursor.execute('select keyword from tyc_business_info union select keyword from tyc_log_nofound')
     data = cursor.fetchall()
-
+    cursor.close()
+    conn.close()
     for x in range(len(data)):
         searched_list.append(data[x][0])
 
@@ -217,6 +241,8 @@ def main(keywords):
 
 
 def do_keyword(keyword):
+    conn = MySQLdb.connect(host="localhost", user="root", passwd="root", db="tianyancha", charset="utf8")
+    cursor = conn.cursor()
     while True:
 
         global proxies
@@ -233,7 +259,7 @@ def do_keyword(keyword):
             cursor.execute('insert into tyc_log_nofound values ("%s","%s","%s")' % (
                 keyword, str(datetime.datetime.now()),
                 str(datetime.datetime.now())[:10]))
-            conn.commit()
+            #conn.commit()
             continue
         if urls_result:
             if urls_result[0] == '-1':
@@ -241,7 +267,7 @@ def do_keyword(keyword):
                 cursor.execute('insert into tyc_log_nofound values ("%s","%s","%s")' % (
                     keyword, str(datetime.datetime.now()),
                     str(datetime.datetime.now())[:10]))
-                conn.commit()
+                #conn.commit()
                 print u'插入nofound表'
 
             else:
@@ -257,10 +283,16 @@ def do_keyword(keyword):
                         company_name = soup.find_all('span', class_="f18 in-block vertival-middle sec-c2")[0].text
                         print company_name
                         print urllib.quote(company_name.encode('utf8'))
+                        cursor.execute('insert into tyc_business_info values('
+                                       '"%s","%s","%s","%s","%s","%s","%s","%s","%s",'
+                                       '"%s","%s","%s","%s","%s","%s","%s","%s","%s","%s")'
+                                       % tuple([keyword]+business_info(html, company_name))
+                                       )
+                        # for  x in business_info(html, company_name):
+                        #     print x
+                        # business_info(html, company_name)
 
-                        business_info(html, company_name)
-
-                        conn.commit()
+                        #conn.commit()
 
                         print u'***************插入完成**************'
                         break
@@ -269,11 +301,13 @@ def do_keyword(keyword):
                         cursor.execute('insert tyc_log_nofound values ("%s","%s","%s")' % (
                             keyword, str(datetime.datetime.now()),
                             str(datetime.datetime.now())[:10]))
-                        conn.commit()
+                        #conn.commit()
                         print keyword + u' 跳过----------------------'
                         continue
         break
-
+    conn.commit()
+    cursor.close()
+    conn.close()
 
 def get_page(url):
     headers = {
@@ -323,6 +357,9 @@ if __name__ == "__main__":
     # =========测试时用的清表==========
     cursor.execute('truncate table tyc_log_nofound')
     cursor.execute('truncate table tyc_business_info')
+    conn.commit()
+    cursor.close()
+    conn.close()
     print '清表 '
     # =========测试时用的清表==========
 
