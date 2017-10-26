@@ -346,6 +346,7 @@ def get_shareholder_cookie(page_no):
     # soup2 = BeautifulSoup(html, 'lxml')
     # return soup2
 
+
 def do_keyword(keyword):
 
     while True:
@@ -407,6 +408,8 @@ def do_keyword(keyword):
                         print keyword + u' 跳过----------------------'
                         continue
         break
+
+
 def get_need_word():
     searched_list = []
     keyword_list = []
@@ -454,10 +457,8 @@ def main(to_search_list):
 
 
 
-
-
 if __name__ == "__main__":
-    conn = MySQLdb.connect(host="localhost", user="root", passwd="somao1129", db="tianyancha", charset="utf8")
+    conn = MySQLdb.connect(host="localhost", user="root", passwd="root", db="tianyancha", charset="utf8")
     cursor = conn.cursor()
 
     keywords = get_need_word()

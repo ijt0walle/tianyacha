@@ -179,8 +179,7 @@ def getJob(corp_name):
                       cookie["uccid"],
             'X-Requested-With': 'XMLHttpRequest'
         }
-        url = 'https://www.tianyancha.com/pagination/recruit.xhtml?ps=10&pn=' + str(page_no) + '&name=' + urllib.quote(
-            corp_name.encode('utf8')) + '&_=' + str(timestamp - 1)
+        url = 'https://www.tianyancha.com/pagination/recruit.xhtml?ps=10&pn=' + str(page_no) + '&name=' + urllib.quote(corp_name.encode('utf8')) + '&_=' + str(timestamp - 1)
         print (url)
         time.sleep(0.5)
         try:
