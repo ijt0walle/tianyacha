@@ -2294,9 +2294,9 @@ def do_keyword(keyword):
                         print company_name
                         print urllib.quote(company_name.encode('utf8'))
 
-                        # cursor.execute(business_info(html))
-                        # staff_info(html, cursor)
-                        # shareholder_info(html, cursor)
+                        cursor.execute(business_info(html))
+                        staff_info(html, cursor)
+                        shareholder_info(html, cursor)
                         # ==========上面的在跑了=========
                         # out_invest_info(html)
                         # change_info(html)
@@ -2366,8 +2366,7 @@ def get_need_word():
     searched_list = []
     keyword_list = []
     to_search_list = []
-    # with open("zhaopin_not_in_jsgsj_basic_info.csv", "r") as csvFile:
-    with open("/Users/huaiz/PycharmProjects/tianyacha/label2.csv", "r") as csvFile:
+    with open("/Users/huaiz/PycharmProjects/tianyacha/label.csv", "r") as csvFile:
         reader = csv.reader(csvFile)
         for crop_name in reader:
             item = crop_name[0].decode('utf-8')
