@@ -14,6 +14,10 @@ from bs4 import BeautifulSoup
 import requests
 import urllib
 
+import sys
+reload(sys)
+sys.setdefaultencoding('utf8')
+
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
 
 # 禁用安全请求警告
@@ -1899,6 +1903,7 @@ def do_search_keyword(keyword):
 def get_need_word():
     searched_list = []
     keyword_list = []
+
     to_search_list = []
     with open("D:\PycharmProjects\\tianyacha\label.csv", "r") as csvFile:
         reader = csv.reader(csvFile)

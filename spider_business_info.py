@@ -89,6 +89,7 @@ def execCmd(cmd):
 
 ## 工商信息
 def business_info(html, company_name):
+    print html.text
     print u'爬取工商信息  ' + str(datetime.datetime.now())
     soup = BeautifulSoup(html.text, 'lxml')
     # 注册资本
@@ -355,12 +356,12 @@ if __name__ == "__main__":
     conn = MySQLdb.connect(host="localhost", user="root", passwd="root", db="tianyancha", charset="utf8")
     cursor = conn.cursor()
     # =========测试时用的清表==========
-    cursor.execute('truncate table tyc_log_nofound')
-    cursor.execute('truncate table tyc_business_info')
-    conn.commit()
-    cursor.close()
-    conn.close()
-    print '清表 '
+    # cursor.execute('truncate table tyc_log_nofound')
+    # cursor.execute('truncate table tyc_business_info')
+    # conn.commit()
+    # cursor.close()
+    # conn.close()
+    # print '清表 '
     # =========测试时用的清表==========
 
     keywords = get_need_word()
